@@ -7,7 +7,7 @@
     "node": ">=24"
   },
   "bin": {
-    "tpa": "./dist/cli.js"
+    "tpa": "./dist/tpa.js"
   },
   "main": "./dist/index.js",
   "files": [
@@ -16,6 +16,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json",
+    "pretest": "pnpm run build",
     "test": "vitest run"
   },
   "dependencies": {
