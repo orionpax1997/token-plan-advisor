@@ -8,11 +8,8 @@ import type {
   UnresolvedFact,
 } from "../../schema/plan.ts";
 import type { RawSnapshot } from "./load.ts";
-import {
-  extractFacts,
-  extractStatedDate,
-  type ExtractedFacts,
-} from "./extract.ts";
+import { SRC } from "./sources.ts";
+import { extractFacts, extractStatedDate, type ExtractedFacts } from "./extract.ts";
 
 const STALE_PRICE_NOTE = "2026-04-21 迁移公告所载官方价目，公告原文标注 based on current pricing, for reference only";
 
@@ -35,6 +32,8 @@ function unobtainable<T>(failureCode?: FailureCode, note?: string): PlanField<T>
     ...(note ? { note } : {}),
   };
 }
+
+const OVERVIEW_IDS = [SRC.overview];
 
 /** 结构化乘数条目：每个数字都携带命中的原文。 */
 function multiplierField(value: number | null, raw: string, sourceIds: string[]): PlanField<number> {
@@ -61,10 +60,10 @@ const TIERS: TierSpec[] = [
 
 /** 页面自述时间戳的抽取标签（法律条款 "Last Update" / 公告 "Publication date"）。 */
 const STATED_DATE_LABELS: Record<string, string[]> = {
-  "legal-terms-of-use": ["\\*\\*Last Update"],
-  "legal-privacy-policy": ["\\*\\*Last Update"],
-  "notice-usage-revision": ["Publication date"],
-  "notice-transition": ["Publication date"],
+  [SRC.terms]: ["\\*\\*Last Update"],
+  [SRC.privacy]: ["\\*\\*Last Update"],
+  [SRC.usageRevision]: ["Publication date"],
+  [SRC.transition]: ["Publication date"],
 };
 
 export function normalizeCollection(input: {
@@ -75,13 +74,13 @@ export function normalizeCollection(input: {
   toolVersion: string;
 }): PlanCollection {
   const { snapshots, facts, mode, collectedAt, toolVersion } = input;
-  const overviewIds = ["devpack-overview"];
+  const overviewIds = OVERVIEW_IDS;
 
   // ---- 额度体系（credits × 模型乘数） ----
   const modelMultipliers = facts.multipliers
     .filter((m) => !m.is_mcp)
     .map((m) => ({
-      model_code: m.model_code,
+      model_code: m.product_name,
       input: multiplierField(m.input, String(m.input ?? m.raw), overviewIds),
       cached_input: multiplierField(m.cached_input, String(m.cached_input ?? m.raw), overviewIds),
       output: multiplierField(m.output, String(m.output), overviewIds),
@@ -89,7 +88,7 @@ export function normalizeCollection(input: {
   const mcpMultipliers = facts.multipliers
     .filter((m) => m.is_mcp)
     .map((m) => ({
-      tool: m.model_code,
+      tool: m.product_name,
       output: multiplierField(m.output, String(m.output), overviewIds),
     }));
 
@@ -167,7 +166,7 @@ export function normalizeCollection(input: {
           routed_to: null,
           status: "source_conflict",
           note: "订阅页 meta 列出该模型，但 devpack 文档的 Supported Models 未列出；是否可直调无法确认",
-          source_ids: ["subscribe-page", "devpack-overview"],
+          source_ids: [SRC.subscribe, SRC.overview],
         },
       ],
     });
@@ -183,7 +182,7 @@ export function normalizeCollection(input: {
     const windows: PlanCollection["plans"][number]["quota"]["windows"] = [];
     if (quotaRow) {
       const sourceIds =
-        tier.audience === "individual" ? ["devpack-overview"] : ["devpack-teamplan"];
+        tier.audience === "individual" ? [SRC.overview] : [SRC.teamplan];
       windows.push(
         {
           window_type: "5h_rolling",
@@ -219,16 +218,16 @@ export function normalizeCollection(input: {
     if (tier.label === "Lite" && facts.startingPrice) {
       priceList.push({
         amount: verified(facts.startingPrice.amount, facts.startingPrice.raw, [
-          "devpack-overview",
-          "subscribe-page",
+          SRC.overview,
+          SRC.subscribe,
         ]),
-        currency: verified(facts.startingPrice.currency, facts.startingPrice.raw, ["devpack-overview"]),
+        currency: verified(facts.startingPrice.currency, facts.startingPrice.raw, [SRC.overview]),
         billing_period: "monthly",
         price_type: "starting_at",
         effective_from: null,
         effective_until: null,
         status: "verified",
-        source_ids: ["devpack-overview", "subscribe-page"],
+        source_ids: [SRC.overview, SRC.subscribe],
       });
     } else if (tier.label !== "Lite") {
       // 现价未从官方静态渠道确认：显式未知，归因 LOGIN_REQUIRED
@@ -252,16 +251,16 @@ export function normalizeCollection(input: {
         const entry = legacyFor(period);
         priceList.push({
           amount: verified(entry?.amount ?? tier.legacy[period], entry?.raw ?? String(tier.legacy[period]), [
-            "notice-transition",
+            SRC.transition,
           ]),
-          currency: verified("USD", "USD", ["notice-transition"]),
+          currency: verified("USD", "USD", [SRC.transition]),
           billing_period: period,
           price_type: "standard",
           effective_from: null,
           effective_until: null,
           status: "stale",
           note: STALE_PRICE_NOTE,
-          source_ids: ["notice-transition"],
+          source_ids: [SRC.transition],
         });
       }
     }
@@ -276,7 +275,7 @@ export function normalizeCollection(input: {
               ? facts.dataPolicy.individual_training_raw
               : facts.dataPolicy.team_training_raw ?? facts.dataPolicy.individual_training_raw,
           source_ids:
-            tier.audience === "individual" ? ["legal-terms-of-use"] : ["devpack-teamplan"],
+            tier.audience === "individual" ? [SRC.terms] : [SRC.teamplan],
         }
       : unobtainable();
 
@@ -294,11 +293,11 @@ export function normalizeCollection(input: {
         value:
           "并发限额绑定套餐档位（Max > Pro > Lite），平台按资源可用性动态调整；非高峰时段动态提升。数值化限额仅登录后台可见。",
         status: "partial",
-        source_ids: ["devpack-usage-policy"],
+        source_ids: [SRC.usagePolicy],
       } satisfies PlanField<string>,
       context_window_tokens: unobtainable(undefined, "Coding Plan 官方文档未给出上下文窗口数值"),
       refund_policy: facts.refund
-        ? verified("购买确认后不支持退款", facts.refund, ["devpack-usage-policy"])
+        ? verified("购买确认后不支持退款", facts.refund, [SRC.usagePolicy])
         : unobtainable(),
       cancellation_notice:
         facts.cancellation.usage_policy_raw && facts.cancellation.faq_raw
@@ -306,25 +305,25 @@ export function normalizeCollection(input: {
             ? verified(
                 `at least ${facts.cancellation.usage_policy_raw} before next billing date`,
                 facts.cancellation.usage_policy_raw,
-                ["devpack-usage-policy"],
+                [SRC.usagePolicy],
               )
             : {
                 value: `Usage Policy: at least ${facts.cancellation.usage_policy_raw}; FAQ: at least ${facts.cancellation.faq_raw}`,
                 status: "source_conflict" as QualityStatus,
                 raw: `Usage Policy: "${facts.cancellation.usage_policy_raw}"; FAQ: "${facts.cancellation.faq_raw}"`,
-                source_ids: ["devpack-usage-policy", "devpack-faq"],
+                source_ids: [SRC.usagePolicy, SRC.faq],
               }
           : unobtainable(),
       purchase_url: verified(
         "https://z.ai/subscribe",
         "Log in to the Z.ai API Platform → Payment Method → Subscription",
-        ["devpack-usage-policy"],
+        [SRC.usagePolicy],
       ),
       data_policy: {
         training_use: trainingUse,
         processing_location: facts.dataPolicy.processing_location
           ? verified(facts.dataPolicy.processing_location, facts.dataPolicy.processing_location, [
-              "legal-privacy-policy",
+              SRC.privacy,
             ])
           : unobtainable(),
         data_retention: unobtainable(undefined, "官方未给出明确的内容保留期限"),
@@ -360,7 +359,7 @@ export function normalizeCollection(input: {
       status: "unobtainable",
       evidence_raw: facts.exportControl?.raw,
       note: "出口管制禁用地区不含中国大陆",
-      source_ids: facts.exportControl ? ["legal-terms-of-use"] : [],
+      source_ids: facts.exportControl ? [SRC.terms] : [],
     },
     feature_restrictions: {
       state: "unconfirmed",
@@ -380,8 +379,8 @@ export function normalizeCollection(input: {
   };
   const restrictedRegions: PlanCollection["regional_availability"] = (facts.exportControl?.regions ?? [])
     .map((name) => {
-      const code = regionCodes[name];
-      if (!code) return null;
+      // 未映射到 ISO 风格代码的地区不静默丢弃：退化为原文 slug
+      const code = regionCodes[name] ?? name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       return {
         region_code: code,
         registration: { state: "unconfirmed", status: "unobtainable", source_ids: [] },
@@ -391,7 +390,7 @@ export function normalizeCollection(input: {
           state: "officially_restricted",
           status: "verified",
           evidence_raw: facts.exportControl?.raw,
-          source_ids: ["legal-terms-of-use"],
+          source_ids: [SRC.terms],
         },
         feature_restrictions: { state: "unconfirmed", status: "unobtainable", source_ids: [] },
       } satisfies PlanCollection["regional_availability"][number];
@@ -409,7 +408,7 @@ export function normalizeCollection(input: {
           effective_until: facts.campaign.effective_until,
           status: "verified",
           raw: facts.campaign.raw,
-          source_ids: ["notice-event-glm-53-flash"],
+          source_ids: [SRC.eventFlash],
         },
       ]
     : [];
@@ -439,7 +438,8 @@ export function normalizeCollection(input: {
   const unresolvedFacts: UnresolvedFact[] = [
     {
       fact: "新 credits 制下 Pro/Max 套餐现价（含季付/年付折扣）",
-      reason: "z.ai/subscribe 正文为重度客户端渲染（RENDER_DEPENDENT），现价仅登录后台可见",
+      reason:
+        "z.ai/subscribe 正文为重度客户端渲染（RENDER_DEPENDENT），fixture/静态抓取仅能核验 meta；现价另需登录后台才能确认（LOGIN_REQUIRED）",
       failure_code: "LOGIN_REQUIRED",
       how_to_resolve: "登录 z.ai/subscribe 或控制台订阅页读取当前价目",
     },
@@ -470,6 +470,11 @@ export function normalizeCollection(input: {
       how_to_resolve: "需要用户实机补充信息",
     },
     {
+      fact: "GLM-4.6V（Vision Understanding MCP）不再有独立乘数行",
+      reason:
+        "2026-09 上旬快照的乘数表中 Vision Understanding 已并入 GLM-5.3-Flash 行（含视觉 MCP 字样），独立 1.2/0.3/2.7 乘数行不再出现；以采集时刻文档为准",
+    },
+    {
       fact: "bigmodel.cn 中国区是否在售同类 GLM Coding Plan 及其定价",
       reason: "中国区为独立 Regional Variant（独立主体/币种/法域），不属于本 Provider 采集范围",
     },
@@ -489,10 +494,10 @@ export function normalizeCollection(input: {
       operator_entity: verified(
         "JINGSHENG HENGXING TECHNOLOGY PTE.LTD",
         "JINGSHENG HENGXING TECHNOLOGY PTE.LTD",
-        ["legal-terms-of-use"],
+        [SRC.terms],
       ),
       jurisdiction: verified("Singapore", "shall be governed by the laws of Singapore", [
-        "legal-terms-of-use",
+        SRC.terms,
       ]),
     },
     payment: {
@@ -510,7 +515,7 @@ export function normalizeCollection(input: {
 }
 
 /** 供 normalize 使用的 facts 抽取入口（保持纯函数边界清晰）。 */
-export function collectNormalized(snapshots: RawSnapshot[], mode: "fixture" | "live", collectedAt: string, toolVersion: string): PlanCollection {
+export function normalizeFromSnapshots(snapshots: RawSnapshot[], mode: "fixture" | "live", collectedAt: string, toolVersion: string): PlanCollection {
   return normalizeCollection({
     snapshots,
     facts: extractFacts(snapshots),

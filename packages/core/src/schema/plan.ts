@@ -227,24 +227,19 @@ const CreditFormula = z.strictObject({
   raw: z.string(),
   divisor: z.number(),
 });
+export type CreditFormula = z.output<typeof CreditFormula>;
 
 /** 采集级额度体系：credits × 模型乘数的结构化原语，原始表达保留在 raw 中。 */
 const QuotaSystem = z.strictObject({
   quota_model: z.enum(QuotaModels),
   unit: stringField(),
-  formula: field(
-    z.strictObject({
-      raw: z.string(),
-      divisor: z.number(),
-    }),
-  ),
+  formula: field(CreditFormula),
   model_multipliers: z.array(ModelMultiplier),
   mcp_multipliers: z.array(McpMultiplier),
   off_peak_discount: field(z.number()),
   peak_hours: stringField(),
 });
 export type QuotaSystem = z.output<typeof QuotaSystem>;
-export type CreditFormula = z.output<typeof CreditFormula>;
 
 // ---------------------------------------------------------------------------
 // 模型生命周期

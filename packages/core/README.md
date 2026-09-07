@@ -24,6 +24,8 @@ tpa collect zai --pretty                 # 缩进输出（默认单行紧凑 JSO
 输出为**机读 JSON**（Plan Schema v1，`schema_version: "1"`），stdout 只承载该文档；错误与用法写 stderr。
 输出必须通过 Schema 校验闸才会发出，包含：字段级质量状态、Unresolved Facts、采集时间戳与所用来源。
 
+> 注意：`collect` 输出契约的正式冻结在 [ticket 05](../../.scratch/core-coding-plan-collection/issues/05-acceptance-contract-freeze.md)；冻结前字段仍可能随后续 Provider（ticket 02–04）需要而增补，增补会升版说明。
+
 程序化调用：
 
 ```ts
@@ -52,7 +54,7 @@ const result = validatePlanCollection(doc); // { ok: true, value } | { ok: false
 
 ## 新增 Data Provider
 
-1. 在 `src/providers/<vendor>/` 建 `sources.ts`（来源注册表，遵循探索 01 §7.3 的来源优先级：定价页 → 文档 → 公告 → 控制台 → 法律条款）。
+1. 在 `src/providers/<vendor>/` 建 `sources.ts`（来源注册表；来源种类遵循探索 01 [§7.3](../../.scratch/token-plan-advisor/issues/01-explore-coding-plan-official-sources.md) 的优先级：定价页 → 文档/帮助 → 公告 → 控制台 → 法律条款；按种类选择替代入口的回退链在 ticket 02 落地）。
 2. 实现 `extract.ts`（从官方正文确定性抽取，每个值保留命中原文）与 `normalize.ts`（组装 `PlanCollection`；抽取不到的降级为 Unresolved Fact，不得猜测）。
 3. 抓取官方快照存入 `fixtures/<vendor>/` 并写 `manifest.json`（`captured_at` + 来源清单）；fixture 与 live 共用同一条归一化路径。
 4. 在 `src/cli.ts` 的 `PROVIDER_FACTORIES` 注册，并经 CLI seam 补端到端测试。

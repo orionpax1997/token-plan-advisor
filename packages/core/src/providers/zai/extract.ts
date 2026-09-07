@@ -66,7 +66,8 @@ export function extractQuotaRows(body: string, planLabels: string[]): ExtractedQ
 }
 
 export interface ExtractedMultiplier {
-  model_code: string;
+  /** 模型名或 MCP 工具名（乘数表的 Product 列）。 */
+  product_name: string;
   input: number | null;
   cached_input: number | null;
   output: number;
@@ -95,7 +96,7 @@ export function extractMultipliers(body: string): ExtractedMultiplier[] {
     const outputNum = toNumber(output ?? "");
     if (outputNum === null) continue;
     result.push({
-      model_code: modelCode,
+      product_name: modelCode,
       input: isMcp ? null : toNumber(input ?? ""),
       cached_input: isMcp ? null : toNumber(cached ?? ""),
       output: outputNum,

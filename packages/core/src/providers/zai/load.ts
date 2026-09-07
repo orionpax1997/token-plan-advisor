@@ -14,7 +14,8 @@ export interface RawSnapshot {
   /** 采集方抓取时间（fixture 模式 = 快照落盘时点；live 模式 = 本次抓取时点）。 */
   fetched_at: string;
   http_status: number;
-  failure_code: FailureCode;
+  /** 仅在可明确归因时给出；不猜测（探索 01 §7.4）。 */
+  failure_code?: FailureCode;
   /** 抓取失败时的说明。 */
   error_note?: string;
 }
@@ -42,12 +43,16 @@ export async function loadFixtureManifest(fixtureDir: string): Promise<FixtureMa
   return JSON.parse(await readFile(join(fixtureDir, "manifest.json"), "utf8")) as FixtureManifest;
 }
 
-function httpStatusToFailureCode(status: number): FailureCode {
-  if (status === 200) return "OK_MD";
-  if (status === 403 || status === 429) return "CF_BLOCKED";
+/**
+ * 仅对可明确归因的状态给出失败分类；无法归因的（如 5xx、网络层错误）
+ * 返回 null——不猜测，错误细节留在 error_note（探索 01 §7.4，CONTEXT.md「不猜测」）。
+ */
+export function httpStatusToFailureCode(status: number): FailureCode | null {
+  if (status === 200) return null; // 由来源注册表的 ok_code 决定
   if (status === 404 || status === 410) return "GONE";
+  if (status === 403 || status === 429) return "CF_BLOCKED";
   if (status === 451) return "REGION_BLOCKED";
-  return "GONE";
+  return null;
 }
 
 const DEFAULT_FETCHER: Fetcher = async (url) => {
@@ -73,6 +78,7 @@ export async function loadSnapshots(
     for (const source of ZAI_SOURCES) {
       try {
         const result = await fetcher(source.url);
+        const mapped = httpStatusToFailureCode(result.status);
         snapshots.push({
           source_id: source.source_id,
           url: source.url,
@@ -80,10 +86,15 @@ export async function loadSnapshots(
           body: result.body,
           fetched_at: fetchedAt,
           http_status: result.status,
-          failure_code: httpStatusToFailureCode(result.status),
+          ...(result.status === 200
+            ? { failure_code: source.ok_code }
+            : mapped
+              ? { failure_code: mapped }
+              : {}),
           ...(result.status !== 200 ? { error_note: `HTTP ${result.status}` } : {}),
         });
       } catch (error) {
+        // 网络层错误：不归因为任何具体失败分类，仅记录错误细节
         snapshots.push({
           source_id: source.source_id,
           url: source.url,
@@ -91,7 +102,6 @@ export async function loadSnapshots(
           body: "",
           fetched_at: fetchedAt,
           http_status: 0,
-          failure_code: "CF_BLOCKED",
           error_note: error instanceof Error ? error.message : String(error),
         });
       }
@@ -120,7 +130,7 @@ export async function loadSnapshots(
       body,
       fetched_at: manifest.captured_at,
       http_status: 200,
-      failure_code: "OK_MD",
+      failure_code: source.ok_code,
     });
   }
   return snapshots;

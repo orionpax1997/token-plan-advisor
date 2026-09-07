@@ -75,7 +75,7 @@ describe("z.ai Data Provider（live 模式，注入抓取函数）", () => {
     expect(degraded.plans).toHaveLength(5);
   });
 
-  it("单来源网络异常不中断采集", async () => {
+  it("单来源网络异常不中断采集：不猜测失败分类，仅记录错误细节", async () => {
     const provider = createZaiProvider();
     const throwingFetcher: Fetcher = async (url) => {
       if (url.includes("devpack/teamplan")) throw new Error("ECONNRESET");
@@ -87,7 +87,9 @@ describe("z.ai Data Provider（live 模式，注入抓取函数）", () => {
       now: () => new Date(COLLECTED_AT),
     });
     const teamplan = degraded.sources.find((s) => s.source_id === "devpack-teamplan");
-    expect(teamplan?.failure_code).toBe("CF_BLOCKED");
+    // 网络层错误不归因为 CF_BLOCKED 之类的具体分类（不猜测），来源仍记录在案
+    expect(teamplan?.http_status).toBe(0);
+    expect(teamplan?.failure_code).toBeUndefined();
     // 团队席位配额降级为未知
     const premium = degraded.plans.find((p) => p.plan_id === "zai-glm-team-premium-seat");
     expect(premium?.quota.windows[0]?.amount.status).toBe("unobtainable");

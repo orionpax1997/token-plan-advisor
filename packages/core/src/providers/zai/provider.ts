@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DataProvider } from "../types.ts";
 import { loadSnapshots, resolvePackageRoot } from "./load.ts";
-import { collectNormalized } from "./normalize.ts";
+import { normalizeFromSnapshots } from "./normalize.ts";
 
 function readToolVersion(): string {
   const root = resolvePackageRoot(import.meta.url);
@@ -24,7 +24,7 @@ export function createZaiProvider(): DataProvider {
     async collect(options) {
       const now = options.now ?? (() => new Date());
       const snapshots = await loadSnapshots(options, fixtureDir);
-      return collectNormalized(snapshots, options.mode, now().toISOString(), toolVersion);
+      return normalizeFromSnapshots(snapshots, options.mode, now().toISOString(), toolVersion);
     },
   };
 }
