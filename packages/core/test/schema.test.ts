@@ -28,6 +28,7 @@ export function minimalCollection(): PlanCollection {
         source_ids: ["legal-terms-of-use"],
       },
     },
+    payment: { methods: ["bank card", "PayPal"], notes: [] },
     quota_system: {
       quota_model: "credits_5h_weekly",
       unit: { value: "credits", status: "verified", source_ids: ["devpack-overview"] },

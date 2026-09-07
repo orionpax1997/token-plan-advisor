@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-09-07T09:15:00.000Z",
+  "note": "快照于 2026-09-07 09:11–09:27 UTC 间直接抓取自官方 URL；fixture 模式的 fetched_at 取 captured_at。",
+  "sources": [
+    { "source_id": "devpack-overview", "file": "devpack-overview.md", "url": "https://docs.z.ai/devpack/overview.md" },
+    { "source_id": "devpack-teamplan", "file": "devpack-teamplan.md", "url": "https://docs.z.ai/devpack/teamplan.md" },
+    { "source_id": "devpack-usage-policy", "file": "devpack-usage-policy.md", "url": "https://docs.z.ai/devpack/usage-policy.md" },
+    { "source_id": "devpack-faq", "file": "devpack-faq.md", "url": "https://docs.z.ai/devpack/faq.md" },
+    { "source_id": "help-faq", "file": "help-faq.md", "url": "https://docs.z.ai/help/faq.md" },
+    { "source_id": "notice-usage-revision", "file": "notice-usage-revision.md", "url": "https://docs.z.ai/devpack/notice/usage-revision.md" },
+    { "source_id": "notice-transition", "file": "notice-transition.md", "url": "https://docs.z.ai/devpack/transition.md" },
+    { "source_id": "notice-event-glm-53-flash", "file": "notice-event-glm-53-flash.md", "url": "https://docs.z.ai/devpack/notice/event-glm-5.3-flash.md" },
+    { "source_id": "legal-terms-of-use", "file": "legal-terms-of-use.md", "url": "https://docs.z.ai/legal-agreement/terms-of-use.md" },
+    { "source_id": "legal-privacy-policy", "file": "legal-privacy-policy.md", "url": "https://docs.z.ai/legal-agreement/privacy-policy.md" },
+    { "source_id": "subscribe-page", "file": "subscribe-meta.html", "url": "https://z.ai/subscribe" }
+  ]
+}

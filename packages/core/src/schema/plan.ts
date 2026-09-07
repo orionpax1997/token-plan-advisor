@@ -16,6 +16,7 @@ export const QuotaModels = [
   "concurrency",
   "relative_multiplier",
 ] as const;
+export type QuotaModel = (typeof QuotaModels)[number];
 
 /** 字段级质量状态：已验证/部分获取/过期/来源冲突/不可获取/不适用。 */
 export const QualityStatuses = [
@@ -48,6 +49,7 @@ export const FailureCodes = [
 
 /** 来源种类，对应探索 01 §7.3 的来源优先级（数值越小优先级越高）。 */
 export const SourceKinds = ["pricing_page", "docs_help", "announcement", "console", "legal"] as const;
+export type SourceKind = (typeof SourceKinds)[number];
 export const SourceKindPriority: Record<(typeof SourceKinds)[number], number> = {
   pricing_page: 1,
   docs_help: 2,
@@ -400,6 +402,11 @@ export const PlanCollection = z.strictObject({
     display_name: z.string(),
   }),
   regional_variant: RegionalVariant.nullable(),
+  /** 官方声明的支付通道（全套餐通用）；notes 保留 3DS 等重要限制原文。 */
+  payment: z.strictObject({
+    methods: z.array(z.string()),
+    notes: z.array(z.string()),
+  }),
   quota_system: QuotaSystem,
   models: z.array(ModelEntry),
   plans: z.array(Plan).min(1),
