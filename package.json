@@ -1,0 +1,15 @@
+{
+  "name": "token-plan-advisor",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@10.33.3",
+  "scripts": {
+    "build": "pnpm -r --filter ./packages/core build",
+    "typecheck": "pnpm -r --filter ./packages/core typecheck",
+    "test": "pnpm -r --filter ./packages/core test"
+  }
+}

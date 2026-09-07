@@ -1,0 +1,29 @@
+{
+  "name": "@token-plan-advisor/core",
+  "version": "0.1.0",
+  "description": "Deterministic coding-plan data collection core: Plan Schema v1, Data Providers, and the tpa CLI.",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "tpa": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  }
+}
