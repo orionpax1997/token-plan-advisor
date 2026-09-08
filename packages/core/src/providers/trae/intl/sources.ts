@@ -47,7 +47,7 @@ export const TRAE_INTL_SOURCES: TraeSourceSpec[] = [
   {
     source_id: SRC.plansAndBilling,
     url: "https://docs.trae.ai/ide/new-plans-and-billing",
-    file: "trae-intl-new-plans-and-billing.md",
+    file: "trae-intl-plans-and-billing.md",
     kind: "docs_help",
     ok_code: "OK_MD",
   },

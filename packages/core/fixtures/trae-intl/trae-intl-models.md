@@ -11,8 +11,8 @@ TRAE IDE supports a curated set of frontier AI models. Model availability and pr
 | GPT-5.4 | 272K | $2.500 (<=272k) / $5.000 (>272k) | $15.000 (<=272k) / $22.500 (>272k) |
 | GPT-5.2 | 200K | $3.000 | $15.000 |
 | Seed-2.1-Turbo | 128K | $0.500 | $2.500 |
-| Claude-M | 200K | $3.000 | $15.000 |
-| Claude-L | 200K | $3.000 | $15.000 |
+| MiniMax-M3 | 200K | $3.000 | $15.000 |
+| MiniMax-M2.7 | 200K | $3.000 | $15.000 |
 | Kimi-K2.5 | 128K | $0.500 | $2.500 |
 | Gemini-3.1-Pro-Preview | 1M | $2.000 (<=200k) / $4.000 (>200k) | $12.000 (<=200k) / $18.000 (>200k) |
 | Gemini-3-Flash-Preview | 1M | $0.075 | $0.300 |

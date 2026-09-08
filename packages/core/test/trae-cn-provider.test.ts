@@ -96,6 +96,13 @@ describe("TRAE CN Data Provider（fixture 模式）", () => {
       expect(billingWindow, plan.plan_id).toBeDefined();
       expect(billingWindow?.raw).toContain("31 个自然日");
     }
+    // 价目条目 note 也携带 31 个自然日，且显式标注"非自然月"
+    const lite = collection.plans.find((p) => p.plan_id === "trae-cn-lite")!;
+    const recurringNote = lite.price_list.find(
+      (p) => p.billing_period === "monthly" && p.price_type === "discounted",
+    )?.note;
+    expect(recurringNote).toContain("31 个自然日");
+    expect(recurringNote).toContain("非自然月");
   });
 
   it("并发云任务：Lite 2 / Pro 10 / Pro+ 10 / Ultra 20 进入 rate_limits", () => {

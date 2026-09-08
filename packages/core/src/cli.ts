@@ -31,33 +31,31 @@ const PROVIDER_FACTORIES: Record<string, () => DataProvider> = {
 const CODING_SUBSCRIPTION_PROVIDERS = Object.keys(PROVIDER_FACTORIES);
 
 /**
- * 尚未接入的 `coding-subscription` 候选与缺口声明。
- * 不宣称市场完整——只声明当前未覆盖、未来 ticket 待扩展的来源。
+ * 尚未接入的 coding 编码订阅候选与缺口声明。
+ * 不宣称市场完整——只声明当前未覆盖、后续 ticket 待扩展的来源。
+ * 父规格（.scratch/core-coding-plan-collection/spec.md）将 Claude/Codex/Google AI
+ * 订阅列为 general-subscription 的 Out of Scope；collect-all 记录它们为缺口但不在本批采集。
  */
 const COVERAGE_GAPS: { name: string; reason: string }[] = [
   {
-    name: "Claude Code (Anthropic, 个人版/团队版)",
-    reason: "本批范围仅覆盖 coding-subscription 已知 7 项；Claude Code / Codex 等其他候选在父规格的 Out of Scope 中",
+    name: "Claude Code（Anthropic）",
+    reason: "父规格 Out of Scope（general-subscription 候选，research/07 已调研）；本批未接入任何 Provider",
   },
   {
-    name: "ChatGPT Codex (OpenAI, 个人版/团队版)",
-    reason: "同上；Out of Scope（属 general-subscription 候选，本批仅采集 coding-subscription）",
+    name: "ChatGPT Codex（OpenAI）",
+    reason: "父规格 Out of Scope（general-subscription 候选，research/06 已调研）；本批未接入任何 Provider",
   },
   {
-    name: "Google AI Pro / Ultra (Gemini 个人订阅)",
-    reason: "general-subscription 类型；不在本批采集范围。Gemini Code Assist 个人免费层已停服（迁 Antigravity）",
+    name: "Google AI Pro / Ultra（Gemini 个人订阅）",
+    reason: "general-subscription 候选（research/08 已调研）；Gemini Code Assist 个人免费层已停服迁 Antigravity，本批不将停服层列为可购档",
   },
   {
-    name: "Bailian / Qwen Code / 阿里云通义灵码 (阿里)",
-    reason: "未列入本批；后续 ticket 扩展",
+    name: "阿里云通义灵码 / Qwen Code",
+    reason: "国内 coding 助手候选未列入本批 7 项；research/12 仅覆盖 Bailian API（api-usage）",
   },
   {
-    name: "DeepSeek API 包月 / 包年套餐",
-    reason: "未列入本批；research/14 仅记录 API 按量计费，月度订阅为另一来源",
-  },
-  {
-    name: "OpenAI API / Anthropic API 包月 / 包年套餐",
-    reason: "api-usage 类型；本批范围不含",
+    name: "其他随时间新增的 coding-subscription 候选",
+    reason: "research/ 目录外的 Vendor 需先完成官方来源调研再接入；collect-all 不宣称市场完整",
   },
 ];
 
@@ -126,6 +124,28 @@ async function collectOne(
  * CLI 入口：argv → 退出码。输出一律先经 Plan Schema v1 校验闸，
  * 保证 stdout 上的机读 JSON 契约可信；错误写 stderr，不污染 stdout。
  */
+function readToolVersion(): string {
+  // 直接读 package.json，不走完整的 provider 采集路径（后者会重复抓取全部来源）
+  const { readFileSync } = require("node:fs") as typeof import("node:fs");
+  const { join, dirname } = require("node:path") as typeof import("node:path");
+  const { fileURLToPath } = require("node:url") as typeof import("node:url");
+  const here = dirname(fileURLToPath(import.meta.url));
+  // dist/cli.js → ../../../package.json (从 dist 向上找 package.json)
+  let dir = here;
+  for (let i = 0; i < 6; i++) {
+    try {
+      const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { version?: string };
+      if (typeof pkg.version === "string") return pkg.version;
+    } catch {
+      // continue
+    }
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return "0.0.0";
+}
+
 export async function runCli(argv: string[], io: CliIo): Promise<number> {
   const [command = null, ...rest] = argv;
   if (command === null || command === "help" || command === "--help") {
@@ -233,18 +253,8 @@ async function runCollectAll(rest: string[], io: CliIo): Promise<number> {
     }
   }
 
-  // 读取工具版本（任一 provider 都共享同一包版本）
-  const firstFactory = PROVIDER_FACTORIES[CODING_SUBSCRIPTION_PROVIDERS[0]!]!;
-  // 用 try/catch 包一层：版本读取失败时使用占位
-  let toolVersion = "0.0.0";
-  try {
-    // 通过工厂创建的 provider 间接读取版本；先实例化再读
-    const instance = firstFactory();
-    const collected = await instance.collect({ mode });
-    toolVersion = collected.collection.tool_version;
-  } catch {
-    // ignore
-  }
+  // 读取工具版本（任一 provider 都共享同一包版本）：直接读 package.json
+  const toolVersion = readToolVersion();
 
   const collections: Record<string, PlanCollection> = {};
   const errors: { provider_id: string; error: string }[] = [];

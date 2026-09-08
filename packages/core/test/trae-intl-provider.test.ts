@@ -117,6 +117,9 @@ describe("TRAE 国际 Data Provider（fixture 模式）", () => {
     expect(cn.registration.state).toBe("officially_restricted");
     expect(cn.registration.evidence_raw).toMatch(/中国大陆/);
     expect(cn.service_policy.state).toBe("officially_restricted");
+    // CN 的功能限制维度无官方针对 CN 的声明 → unconfirmed（US 屏蔽 GPT/MiniMax 属 GLOBAL/US 维度）
+    expect(cn.feature_restrictions.state).toBe("unconfirmed");
+    expect(cn.feature_restrictions.evidence_raw).not.toContain("United States");
     // 港澳：服务政策按付费清单口径
     const hk = collection.regional_availability.find((r) => r.region_code === "HK")!;
     const mo = collection.regional_availability.find((r) => r.region_code === "MO")!;

@@ -95,6 +95,12 @@ export function normalizeCollection(input: {
 
     const priceList: PlanCollection["plans"][number]["price_list"] = [];
 
+    // 官方计费周期口径：31 个自然日（非自然月）。随每个价目条目标注，避免与自然月混淆。
+    const cycleNote =
+      facts.billingPeriod.periodDays !== null
+        ? `；计费周期：${facts.billingPeriod.periodDays} 个自然日（官方口径，非自然月；订阅生效日起算）`
+        : "";
+
     // 单月价
     if (single !== null && single !== undefined && Number.isFinite(single)) {
       priceList.push({
@@ -105,7 +111,7 @@ export function normalizeCollection(input: {
         effective_from: null,
         effective_until: null,
         status: "verified",
-        note: "单月价格",
+        note: `单月价格${cycleNote}`,
         source_ids: pricingSourceIds,
       });
     }
@@ -119,7 +125,7 @@ export function normalizeCollection(input: {
         effective_from: null,
         effective_until: null,
         status: "verified",
-        note: "连续包月折扣价（默认自动续费，可随时取消）",
+        note: `连续包月折扣价（默认自动续费，可随时取消）${cycleNote}`,
         source_ids: pricingSourceIds,
       });
     }

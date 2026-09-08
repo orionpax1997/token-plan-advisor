@@ -276,27 +276,16 @@ export function normalizeCollection(input: {
     return orderA - orderB;
   });
 
-  // ---- 五维地区可用性（CN/GLOBAL 双区） ----
-  // research/04 §5.1：trae.ai 不对中国大陆开放产品可用性、不对中国大陆开放付费订阅
-  // 港澳在 Supported countries 清单中不在，但出现在 Payment Service Regions 中
-  const cnExclusionRaw = [
-    "Supported countries and regions (产品整体可用性): " + (
-      facts.regionExclusion.hasMainlandChina ? "中国大陆" : "中国大陆已明确排除"
-    ),
-    "Payment service regions (付费订阅开通范围): " + (
-      facts.paymentRegions.hasMainlandChina
-        ? "含中国大陆"
-        : facts.paymentRegions.hasHongKong
-          ? "含港澳不含大陆"
-          : "不含中国大陆"
-    ),
-  ].join("；");
+  // ---- 五维地区可用性（CN/HK/MO/GLOBAL 四区） ----
+  // research/04 §5.1：trae.ai 不对中国大陆/港澳/台湾开放产品整体可用性
+  // 港澳在付费服务地区清单中存在但产品不支持安装（口径不一致已记录）
+  // 此处不再构造 dead 三元表达式；详见 research/04 §4.1
 
   const regional_availability: PlanCollection["regional_availability"] = [
     {
       region_code: "CN",
       registration: {
-        state: facts.regionExclusion.hasMainlandChina ? "officially_restricted" : "officially_restricted",
+        state: "officially_restricted",
         status: "verified",
         evidence_raw: "Supported countries and regions 列表不含中国大陆（41 国清单无 Mainland China）",
         note: "TRAE 国际版产品层面明确不向中国大陆用户提供",
@@ -328,20 +317,22 @@ export function normalizeCollection(input: {
         source_ids: regionsSourceIds,
       },
       feature_restrictions: {
-        state: "officially_restricted",
-        status: "verified",
-        evidence_raw: facts.usModelRestriction.restrictionRaw ?? "无可机读官方声明",
-        note: "TRAE 国际版未发布针对中国大陆用户的模型级限制声明；已声明的模型级地区限制以美国为对象（GPT/MiniMax 系列）",
-        source_ids: modelsSourceIds,
+        // CN 区域本身已被 Supported countries 清单排除（注册/服务政策 officially_restricted），
+        // 模型级地区限制以美国为对象；TRAE 未发布针对中国大陆的功能差异化声明
+        state: "unconfirmed",
+        status: "unobtainable",
+        evidence_raw: "TRAE 国际版未发布针对中国大陆用户的模型级或功能级限制声明；已声明的模型级地区限制以美国为对象（GPT/MiniMax 系列）",
+        note: "无可机读针对 CN 的功能限制官方声明；已声明的限制在 GLOBAL/US 维度",
+        source_ids: [],
       },
     },
     {
       region_code: "HK",
       registration: {
-        state: facts.regionExclusion.hasHongKong ? "officially_restricted" : "officially_restricted",
+        state: "officially_restricted",
         status: "verified",
         evidence_raw: "Supported countries and regions 列表不含 Hong Kong SAR (China)（产品可用性清单）",
-        note: "TRAE 国际版产品层面明确不向香港用户提供；与付费服务地区清单存在口径差异",
+        note: "TRAE 国际版产品层面明确不向香港用户提供；付费服务地区清单含港澳，两份清单口径差异见 Unresolved Facts",
         source_ids: regionsSourceIds,
       },
       payment: {
@@ -350,7 +341,7 @@ export function normalizeCollection(input: {
         evidence_raw: facts.paymentRegions.hasHongKong
           ? "Supported countries/regions (付费服务) 含 Hong Kong SAR (China)"
           : "Supported countries/regions (付费服务) 不含 Hong Kong",
-        note: "付费服务清单口径差异",
+        note: "付费服务清单口径与产品可用性清单不一致；以官方原文分别记录",
         source_ids: regionsSourceIds,
       },
       network_access: {
@@ -360,12 +351,12 @@ export function normalizeCollection(input: {
         source_ids: [],
       },
       service_policy: {
-        state: facts.paymentRegions.hasHongKong ? "officially_available" : "officially_restricted",
+        state: facts.paymentRegions.hasHongKong ? "officially_conditional" : "officially_restricted",
         status: "verified",
         evidence_raw: facts.paymentRegions.hasHongKong
-          ? "付费服务清单含 Hong Kong SAR (China)"
+          ? "付费服务清单含 Hong Kong SAR (China)，但产品可用性清单不含（可能影响实际使用）"
           : "付费服务清单不含 Hong Kong",
-        note: "服务政策按付费服务清单口径标注",
+        note: "港澳可支付但产品不可用的矛盾保留双清单原文，不静默择一",
         source_ids: regionsSourceIds,
       },
       feature_restrictions: {
@@ -378,10 +369,10 @@ export function normalizeCollection(input: {
     {
       region_code: "MO",
       registration: {
-        state: facts.regionExclusion.hasMacao ? "officially_restricted" : "officially_restricted",
+        state: "officially_restricted",
         status: "verified",
         evidence_raw: "Supported countries and regions 列表不含 Macao SAR (China)",
-        note: "TRAE 国际版产品层面明确不向澳门用户提供",
+        note: "TRAE 国际版产品层面明确不向澳门用户提供；付费服务地区清单含港澳，两份清单口径差异见 Unresolved Facts",
         source_ids: regionsSourceIds,
       },
       payment: {
@@ -390,7 +381,7 @@ export function normalizeCollection(input: {
         evidence_raw: facts.paymentRegions.hasMacao
           ? "付费服务清单含 Macao SAR (China)"
           : "付费服务清单不含 Macao",
-        note: "付费服务清单口径差异",
+        note: "付费服务清单口径与产品可用性清单不一致；以官方原文分别记录",
         source_ids: regionsSourceIds,
       },
       network_access: {
@@ -400,10 +391,10 @@ export function normalizeCollection(input: {
         source_ids: [],
       },
       service_policy: {
-        state: facts.paymentRegions.hasMacao ? "officially_available" : "officially_restricted",
+        state: facts.paymentRegions.hasMacao ? "officially_conditional" : "officially_restricted",
         status: "verified",
         evidence_raw: facts.paymentRegions.hasMacao
-          ? "付费服务清单含 Macao SAR (China)"
+          ? "付费服务清单含 Macao SAR (China)，但产品可用性清单不含（可能影响实际使用）"
           : "付费服务清单不含 Macao",
         source_ids: regionsSourceIds,
       },

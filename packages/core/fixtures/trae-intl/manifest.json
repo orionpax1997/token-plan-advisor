@@ -3,7 +3,7 @@
   "note": "TRAE 国际站快照：trae.ai/pricing 与 trae.ai/terms-of-service 为客户端渲染；其余 docs.trae.ai 帮助文档 + 博客为正常 markdown。",
   "sources": [
     { "source_id": "trae-intl-pricing", "file": "trae-intl-pricing.html", "url": "https://www.trae.ai/pricing" },
-    { "source_id": "trae-intl-plans-and-billing", "file": "trae-intl-new-plans-and-billing.md", "url": "https://docs.trae.ai/ide/new-plans-and-billing" },
+    { "source_id": "trae-intl-plans-and-billing", "file": "trae-intl-plans-and-billing.md", "url": "https://docs.trae.ai/ide/new-plans-and-billing" },
     { "source_id": "trae-intl-plans-and-billing-faqs", "file": "trae-intl-plans-and-billing-faqs.md", "url": "https://docs.trae.ai/ide/plans-and-billing-faqs" },
     { "source_id": "trae-intl-on-demand-usage", "file": "trae-intl-on-demand-usage.md", "url": "https://docs.trae.ai/ide/on-demand-usage" },
     { "source_id": "trae-intl-billing", "file": "trae-intl-billing.md", "url": "https://docs.trae.ai/ide/billing" },
