@@ -1,0 +1,16 @@
+{
+  "captured_at": "2026-09-07T09:15:00.000Z",
+  "note": "TRAE 国际站快照：trae.ai/pricing 与 trae.ai/terms-of-service 为客户端渲染；其余 docs.trae.ai 帮助文档 + 博客为正常 markdown。",
+  "sources": [
+    { "source_id": "trae-intl-pricing", "file": "trae-intl-pricing.html", "url": "https://www.trae.ai/pricing" },
+    { "source_id": "trae-intl-plans-and-billing", "file": "trae-intl-new-plans-and-billing.md", "url": "https://docs.trae.ai/ide/new-plans-and-billing" },
+    { "source_id": "trae-intl-plans-and-billing-faqs", "file": "trae-intl-plans-and-billing-faqs.md", "url": "https://docs.trae.ai/ide/plans-and-billing-faqs" },
+    { "source_id": "trae-intl-on-demand-usage", "file": "trae-intl-on-demand-usage.md", "url": "https://docs.trae.ai/ide/on-demand-usage" },
+    { "source_id": "trae-intl-billing", "file": "trae-intl-billing.md", "url": "https://docs.trae.ai/ide/billing" },
+    { "source_id": "trae-intl-supported-countries", "file": "trae-intl-supported-countries.md", "url": "https://docs.trae.ai/ide/supported-countries-and-regions" },
+    { "source_id": "trae-intl-models", "file": "trae-intl-models.md", "url": "https://docs.trae.ai/ide/models" },
+    { "source_id": "trae-intl-blog-membership-upgrade", "file": "trae-intl-blog-membership-upgrade.md", "url": "https://www.trae.ai/blog/trae_membership_0213" },
+    { "source_id": "trae-intl-changelog", "file": "trae-intl-changelog.md", "url": "https://docs.trae.ai/ide/changelog" },
+    { "source_id": "trae-intl-privacy-policy", "file": "trae-intl-privacy-policy.md", "url": "https://www.trae.ai/privacy-policy" }
+  ]
+}

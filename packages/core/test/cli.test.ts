@@ -156,10 +156,68 @@ describe("tpa collect cursor / cursor-start-in（CLI seam，fixture 模式）", 
     }
   });
 
-  it("用法提示列出全部 Provider（含新增 cursor 系列）", async () => {
+  it("用法提示列出全部 Provider（含 Trae / Gemini 系列）", async () => {
     const cap = capture();
     await runCli(["--help"], cap.io);
-    // 注册表整行匹配：证明 cursor 与 cursor-start-in 各自独立列出
-    expect(cap.stderr()).toContain("zai, codebuddy-cn, codebuddy-intl, cursor, cursor-start-in");
+    // 注册表整行匹配：证明 Trae 与 Gemini 各自独立列出
+    expect(cap.stderr()).toContain("trae-intl");
+    expect(cap.stderr()).toContain("trae-cn");
+    expect(cap.stderr()).toContain("gemini-codeassist");
+  });
+
+  it("tpa collect trae-intl 退出码 0 且输出通过 Schema 校验", async () => {
+    const cap = capture();
+    const code = await runCli(["collect", "trae-intl", "--mode", "fixture"], cap.io);
+    expect(code).toBe(0);
+    const doc = JSON.parse(cap.stdout()) as PlanCollection;
+    const validation = validatePlanCollection(doc);
+    expect(validation.ok).toBe(true);
+    if (validation.ok) {
+      expect(validation.value.collection.provider_id).toBe("trae-intl");
+      expect(validation.value.regional_variant?.variant_id).toBe("trae-intl");
+      // RENDER_DEPENDENT 失败码可见
+      const codes = new Set(validation.value.unresolved_facts.map((f) => f.failure_code).filter(Boolean));
+      expect(codes.has("RENDER_DEPENDENT")).toBe(true);
+      expect(codes.has("STALE_CONFLICT")).toBe(true);
+      expect(validation.value.source_chains.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("tpa collect trae-cn 退出码 0 且输出通过 Schema 校验（31 自然日计费周期）", async () => {
+    const cap = capture();
+    const code = await runCli(["collect", "trae-cn", "--mode", "fixture"], cap.io);
+    expect(code).toBe(0);
+    const doc = JSON.parse(cap.stdout()) as PlanCollection;
+    const validation = validatePlanCollection(doc);
+    expect(validation.ok).toBe(true);
+    if (validation.ok) {
+      expect(validation.value.collection.provider_id).toBe("trae-cn");
+      expect(validation.value.regional_variant?.variant_id).toBe("trae-cn");
+      // 31 个自然日原文出现在 windows raw 中
+      const billingWindow = validation.value.plans[0]?.quota.windows.find(
+        (w) => w.unit?.includes("周期"),
+      );
+      expect(billingWindow?.raw).toContain("31 个自然日");
+    }
+  });
+
+  it("tpa collect gemini-codeassist 退出码 0 且输出通过 Schema 校验（双口径价格）", async () => {
+    const cap = capture();
+    const code = await runCli(["collect", "gemini-codeassist", "--mode", "fixture"], cap.io);
+    expect(code).toBe(0);
+    const doc = JSON.parse(cap.stdout()) as PlanCollection;
+    const validation = validatePlanCollection(doc);
+    expect(validation.ok).toBe(true);
+    if (validation.ok) {
+      expect(validation.value.collection.provider_id).toBe("google-gemini-codeassist");
+      // Standard 档 4 条价格（Hourly×2 + Monthly×2）
+      const standard = validation.value.plans.find((p) => p.plan_id === "gemini-codeassist-standard");
+      expect(standard?.price_list.length).toBe(4);
+      // 个人层 2026-06-18 停服迁 Antigravity
+      const deprecated = validation.value.unresolved_facts.find(
+        (f) => f.failure_code === "DEPRECATED",
+      );
+      expect(deprecated).toBeDefined();
+    }
   });
 });

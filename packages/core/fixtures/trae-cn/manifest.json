@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-09-07T09:15:00.000Z",
+  "note": "TRAE 中国站快照：trae.cn/pricing 为客户端渲染；docs.trae.cn 帮助文档全站支持 .md 直链。",
+  "sources": [
+    { "source_id": "trae-cn-pricing", "file": "trae-cn-pricing.html", "url": "https://www.trae.cn/pricing" },
+    { "source_id": "trae-cn-plans-and-billing", "file": "trae-cn-plans-and-billing.md", "url": "https://docs.trae.cn/ide_plans-and-billing.md" },
+    { "source_id": "trae-cn-coming-soon", "file": "trae-cn-coming-soon.md", "url": "https://docs.trae.cn/ide_coming-soon.md" },
+    { "source_id": "trae-cn-models", "file": "trae-cn-models.md", "url": "https://docs.trae.cn/ide_models.md" },
+    { "source_id": "trae-cn-device-limit", "file": "trae-cn-device-limit.md", "url": "https://docs.trae.cn/ide_device-limit.md" },
+    { "source_id": "trae-cn-privacy-mode", "file": "trae-cn-privacy-mode.md", "url": "https://docs.trae.cn/ide_privacy-mode.md" },
+    { "source_id": "trae-cn-quickstart", "file": "trae-cn-quickstart.md", "url": "https://docs.trae.cn/ide_get-started-with-trae.md" },
+    { "source_id": "trae-cn-changelog", "file": "trae-cn-changelog.md", "url": "https://docs.trae.cn/ide_changelog.md" }
+  ]
+}

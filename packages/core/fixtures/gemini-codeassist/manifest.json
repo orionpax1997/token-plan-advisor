@@ -1,0 +1,18 @@
+{
+  "captured_at": "2026-09-07T09:15:00.000Z",
+  "note": "Gemini Code Assist 快照：定价页 Hourly 口径 + 商业版 Monthly 口径；个人层（individuals）2026-06-18 停服迁 Antigravity。",
+  "sources": [
+    { "source_id": "gemini-codeassist-pricing", "file": "gemini-codeassist-pricing.md", "url": "https://cloud.google.com/products/gemini/pricing" },
+    { "source_id": "gemini-codeassist-business", "file": "gemini-codeassist-business.md", "url": "https://codeassist.google/products/business" },
+    { "source_id": "gemini-codeassist-quotas", "file": "gemini-codeassist-quotas.md", "url": "https://cloud.google.com/gemini/docs/quotas" },
+    { "source_id": "gemini-codeassist-locations", "file": "gemini-codeassist-locations.md", "url": "https://cloud.google.com/gemini/docs/locations" },
+    { "source_id": "gemini-codeassist-setup", "file": "gemini-codeassist-setup.md", "url": "https://developers.google.com/gemini-code-assist/docs/set-up-gemini-standard-enterprise" },
+    { "source_id": "gemini-codeassist-admin", "file": "gemini-codeassist-admin.md", "url": "https://cloud.google.com/gemini/docs/admin" },
+    { "source_id": "gemini-codeassist-individuals-deprecation", "file": "gemini-codeassist-individuals-deprecation.md", "url": "https://developers.google.com/gemini-code-assist/docs/deprecations/code-assist-individuals" },
+    { "source_id": "gemini-codeassist-consumer", "file": "gemini-codeassist-consumer.md", "url": "https://developers.google.com/gemini-code-assist/docs/set-up-gemini" },
+    { "source_id": "gemini-codeassist-data-governance", "file": "gemini-codeassist-data-governance.md", "url": "https://docs.cloud.google.com/gemini/docs/discover/data-governance" },
+    { "source_id": "gemini-codeassist-security", "file": "gemini-codeassist-security.md", "url": "https://cloud.google.com/gemini/docs/codeassist/security-privacy-compliance" },
+    { "source_id": "gemini-codeassist-release-notes", "file": "gemini-codeassist-release-notes.md", "url": "https://cloud.google.com/gemini/docs/codeassist/release-notes" },
+    { "source_id": "gemini-codeassist-blog-antigravity", "file": "gemini-codeassist-blog-antigravity.md", "url": "https://developers.googleblog.com/en/an-important-update-transitioning-gemini-cli-to-antigravity-cli/" }
+  ]
+}
