@@ -1,0 +1,11 @@
+{
+  "captured_at": "2026-09-07T09:15:00.000Z",
+  "note": "CodeBuddy 国际站快照：直接抓取自官方 URL；fixture 模式的 fetched_at 取 captured_at。",
+  "sources": [
+    { "source_id": "codebuddy-intl-pricing", "file": "codebuddy-intl-pricing.md", "url": "https://www.codebuddy.ai/docs/ide/Account/pricing" },
+    { "source_id": "intl-1256-77269", "file": "intl-1256-77269.md", "url": "https://www.tencentcloud.com/document/product/1256/77269" },
+    { "source_id": "intl-1256-77270", "file": "intl-1256-77270.md", "url": "https://www.tencentcloud.com/document/product/1256/77270" },
+    { "source_id": "intl-1256-77266", "file": "intl-1256-77266.md", "url": "https://www.tencentcloud.com/document/product/1256/77266" },
+    { "source_id": "intl-codebuddy-privacy", "file": "intl-codebuddy-privacy.md", "url": "https://www.codebuddy.ai/document/privacy-policy" }
+  ]
+}

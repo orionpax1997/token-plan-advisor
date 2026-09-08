@@ -149,6 +149,7 @@ export function minimalCollection(): PlanCollection {
         last_updated_at: null,
       },
     ],
+    source_chains: [],
     unresolved_facts: [],
   };
 }
@@ -250,5 +251,64 @@ describe("Plan Schema v1 校验", () => {
     doc.scores = { overall: 99 };
     const result = validatePlanCollection(doc as unknown as PlanCollection);
     expect(result.ok).toBe(false);
+  });
+
+  it("支持 source_chains：记录每条回退链的尝试顺序、结果与最终选择", () => {
+    const doc = minimalCollection();
+    doc.source_chains = [
+      {
+        chain_id: "codebuddy-cn-pricing",
+        purpose: "CodeBuddy 国内个人版价目与额度",
+        attempts: [
+          {
+            source_id: "codebuddy-cn-pricing",
+            kind: "pricing_page",
+            ok: true,
+            http_status: 200,
+            failure_code: "OK",
+          },
+          {
+            source_id: "cloud-1749-109769",
+            kind: "docs_help",
+            ok: false,
+            http_status: 404,
+            failure_code: "GONE",
+            error_note: "页面不存在",
+          },
+        ],
+        chosen_source_id: "codebuddy-cn-pricing",
+      },
+    ];
+    const result = validatePlanCollection(doc);
+    expect(result.ok).toBe(true);
+  });
+
+  it("回退链 chosen_source_id 为 null 表示整链失败", () => {
+    const doc = minimalCollection();
+    doc.source_chains = [
+      {
+        chain_id: "all-failed",
+        purpose: "整链失败的极端示例",
+        attempts: [
+          {
+            source_id: "first",
+            kind: "pricing_page",
+            ok: false,
+            http_status: 403,
+            failure_code: "CF_BLOCKED",
+          },
+          {
+            source_id: "second",
+            kind: "docs_help",
+            ok: false,
+            http_status: 0,
+            error_note: "ECONNRESET",
+          },
+        ],
+        chosen_source_id: null,
+      },
+    ];
+    const result = validatePlanCollection(doc);
+    expect(result.ok).toBe(true);
   });
 });

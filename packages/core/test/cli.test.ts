@@ -70,3 +70,51 @@ describe("tpa collect zai（CLI seam，fixture 模式）", () => {
     expect(await runCli(["collect", "zai", "--mode", "wat"], cap2.io)).not.toBe(0);
   });
 });
+
+describe("tpa collect codebuddy-cn / codebuddy-intl（CLI seam，fixture 模式）", () => {
+  it("codebuddy-cn 退出码 0 且输出通过 Schema 校验", async () => {
+    const cap = capture();
+    const code = await runCli(["collect", "codebuddy-cn", "--mode", "fixture"], cap.io);
+    expect(code).toBe(0);
+    const doc = JSON.parse(cap.stdout()) as PlanCollection;
+    const validation = validatePlanCollection(doc);
+    expect(validation.ok).toBe(true);
+    if (validation.ok) {
+      expect(validation.value.collection.provider_id).toBe("tencent-codebuddy-cn");
+      expect(validation.value.regional_variant?.variant_id).toBe("codebuddy-cn");
+      // STALE_CONFLICT、TIME_DEPENDENT、LOGIN_REQUIRED 均进入输出
+      const codes = new Set(validation.value.unresolved_facts.map((f) => f.failure_code).filter(Boolean));
+      expect(codes.has("STALE_CONFLICT")).toBe(true);
+      expect(codes.has("TIME_DEPENDENT")).toBe(true);
+      expect(codes.has("LOGIN_REQUIRED")).toBe(true);
+      // 回退链（source_chains）记录在案
+      expect(validation.value.source_chains.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("codebuddy-intl 退出码 0 且输出通过 Schema 校验", async () => {
+    const cap = capture();
+    const code = await runCli(["collect", "codebuddy-intl", "--mode", "fixture"], cap.io);
+    expect(code).toBe(0);
+    const doc = JSON.parse(cap.stdout()) as PlanCollection;
+    const validation = validatePlanCollection(doc);
+    expect(validation.ok).toBe(true);
+    if (validation.ok) {
+      expect(validation.value.collection.provider_id).toBe("tencent-codebuddy-intl");
+      expect(validation.value.regional_variant?.variant_id).toBe("codebuddy-intl");
+      // STALE_CONFLICT 与 TIME_DEPENDENT 必须出现
+      const codes = new Set(validation.value.unresolved_facts.map((f) => f.failure_code).filter(Boolean));
+      expect(codes.has("STALE_CONFLICT")).toBe(true);
+      expect(codes.has("TIME_DEPENDENT")).toBe(true);
+      expect(validation.value.source_chains.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("用法提示列出全部 Provider", async () => {
+    const cap = capture();
+    await runCli(["--help"], cap.io);
+    expect(cap.stderr()).toContain("zai");
+    expect(cap.stderr()).toContain("codebuddy-cn");
+    expect(cap.stderr()).toContain("codebuddy-intl");
+  });
+});

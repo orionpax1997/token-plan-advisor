@@ -360,6 +360,54 @@ const UnresolvedFact = z.strictObject({
 });
 export type UnresolvedFact = z.output<typeof UnresolvedFact>;
 
+const SourceChainAttempt = z.strictObject({
+  source_id: z.string(),
+  kind: z.enum(SourceKinds),
+  /** 是否成功获取（http_status=200 且 body 非空）。 */
+  ok: z.boolean(),
+  failure_code: FailureCode.optional(),
+  http_status: z.number().optional(),
+  error_note: z.string().optional(),
+});
+export type SourceChainAttempt = z.output<typeof SourceChainAttempt>;
+
+const SourceChainRef = z.strictObject({
+  /** 回退链标识；同一 Provider 内唯一。 */
+  chain_id: z.string(),
+  /** 回退链意图：覆盖哪类事实（"价目" / "积分规则" / "法律条款"）。 */
+  purpose: z.string(),
+  /** 按优先级升序排列的尝试记录；首条为首选来源。 */
+  attempts: z.array(SourceChainAttempt).min(1),
+  /** 链内首个 ok=true 的 source_id；整链失败时为 null。 */
+  chosen_source_id: z.string().nullable(),
+}).check((ctx) => {
+  const c = ctx.value as SourceChainRef;
+  const sourceIds = new Set(c.attempts.map((a) => a.source_id));
+  if (c.chosen_source_id !== null && !sourceIds.has(c.chosen_source_id)) {
+    ctx.issues.push({
+      code: "custom",
+      message: `chosen_source_id ${c.chosen_source_id} 不在 attempts 列表内`,
+      input: c,
+    });
+  }
+  const okAttempts = c.attempts.filter((a) => a.ok);
+  if (c.chosen_source_id === null && okAttempts.length > 0) {
+    ctx.issues.push({
+      code: "custom",
+      message: "chosen_source_id 为 null 时 attempts 中不应有 ok=true 的来源",
+      input: c,
+    });
+  }
+  if (c.chosen_source_id !== null && okAttempts.length === 0) {
+    ctx.issues.push({
+      code: "custom",
+      message: "chosen_source_id 非 null 时 attempts 中至少应有一条 ok=true",
+      input: c,
+    });
+  }
+});
+export type SourceChainRef = z.output<typeof SourceChainRef>;
+
 const Promotion = z.strictObject({
   description: z.string(),
   kind: z.enum(["quota", "price"]),
@@ -408,6 +456,11 @@ export const PlanCollection = z.strictObject({
   regional_availability: z.array(RegionalAvailability),
   promotions: z.array(Promotion),
   sources: z.array(SourceRef).min(1),
+  /**
+   * 回退链快照：每条链记录首选与备选入口的抓取结果与最终采纳。
+   * 失败原因、实际使用的来源与回退路径可从本字段追溯（tpa CLI 输出契约）。
+   */
+  source_chains: z.array(SourceChainRef),
   unresolved_facts: z.array(UnresolvedFact),
 });
 export type PlanCollection = z.output<typeof PlanCollection>;

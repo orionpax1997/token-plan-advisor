@@ -1,9 +1,13 @@
 import { createZaiProvider } from "./providers/zai/provider.ts";
+import { createCodeBuddyCnProvider } from "./providers/codebuddy/cn/provider.ts";
+import { createCodeBuddyIntlProvider } from "./providers/codebuddy/intl/provider.ts";
 import type { DataProvider } from "./providers/types.ts";
 import { validatePlanCollection } from "./schema/plan.ts";
 
 const PROVIDER_FACTORIES: Record<string, () => DataProvider> = {
   zai: createZaiProvider,
+  "codebuddy-cn": createCodeBuddyCnProvider,
+  "codebuddy-intl": createCodeBuddyIntlProvider,
 };
 
 const USAGE = `Usage: tpa collect <provider> [--mode fixture|live] [--pretty]

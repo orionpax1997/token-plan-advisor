@@ -510,6 +510,7 @@ export function normalizeCollection(input: {
     regional_availability: [cnEntry, ...restrictedRegions],
     promotions,
     sources,
+    source_chains: [],
     unresolved_facts: unresolvedFacts,
   };
 }
