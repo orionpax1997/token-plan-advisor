@@ -58,11 +58,3 @@ export function parseLeaderboard(body: string): LeaderboardArtifact {
   }
   return parsed as LeaderboardArtifact;
 }
-
-/** tasks.txt：一行一个任务名；空行忽略。 */
-export function parseTaskNames(body: string): string[] {
-  return body
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-}

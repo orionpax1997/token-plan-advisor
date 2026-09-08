@@ -5,7 +5,6 @@ export const SRC = {
   page: "zapier-benchmarks-page",
   pageMeta: "zapier-benchmarks-page-meta",
   privateLeaderboard: "zapier-private-leaderboard",
-  privateLeaderboardDomains: "zapier-private-leaderboard-domains",
   readme: "zapier-readme",
   license: "zapier-license",
   changelog: "zapier-changelog",
@@ -26,11 +25,12 @@ export const SRC = {
  * 数据集标识**分开记录，不互相补齐分数（私有 vs 公开 README 明确不 1:1 等价）。
  *
  *   - 私有 held-out leaderboard = 来源 zapier-benchmarks-page + zapier-private-leaderboard.json
- *     + zapier-private-leaderboard-domains.json（页面/榜单内容）
- *   - 公开 600-task 仓库 = 来源 zapier-public-tasks.json（README 公开任务清单 + domain 主题）
+ *     （页面/榜单内容；domain 摘要仅在 license_and_access_notes 中引用，不再作为独立 record）
+ *   - 公开 600-task 仓库 = 来源 zapier-public-tasks.json（README 公开任务清单 + domain 主题，
+ *     在 task_set.domains 字段表达），public-baselines.json 提供公开 baseline 模型展示名作为 reference
  *
- * 跨两者的分数（私有 vs 公开）禁止换算、补齐或拼接；不同 record_id 前缀
- * `zapier-private:1.0.6:` 与 `zapier-public:1.0.6:` 在 Schema 校验阶段即分离。
+ * 跨两者的分数（私有 vs 公开）禁止换算、补齐或拼接；strict record 的 record_id 前缀
+ * `zapier-private:1.0.6:` 已与 task_set.task_set_kind + license_and_access_notes 同步。
  */
 export const ZAPIER_AUTOMATIONBENCH_SOURCES: BenchmarkSourceSpec[] = [
   {
@@ -49,12 +49,6 @@ export const ZAPIER_AUTOMATIONBENCH_SOURCES: BenchmarkSourceSpec[] = [
     source_id: SRC.privateLeaderboard,
     url: "https://zapier.com/benchmarks",
     file: "private-leaderboard.json",
-    kind: "leaderboard_artifact",
-  },
-  {
-    source_id: SRC.privateLeaderboardDomains,
-    url: "https://zapier.com/benchmarks",
-    file: "private-leaderboard-domains.json",
     kind: "leaderboard_artifact",
   },
   {

@@ -78,41 +78,6 @@ export function parsePrivateLeaderboard(body: string): PrivateLeaderboardArtifac
   return parsed as PrivateLeaderboardArtifact;
 }
 
-export interface DomainPlace {
-  display_name: string;
-  vendor: string;
-  score: number;
-}
-
-export interface PrivateDomainResult {
-  domain: string;
-  first_place: DomainPlace;
-  second_place: DomainPlace;
-}
-
-export interface PrivateLeaderboardDomainsArtifact {
-  benchmark_version: string;
-  captured_at: string;
-  task_set_kind: "private_held_out";
-  note: string;
-  domains: PrivateDomainResult[];
-}
-
-export function parsePrivateLeaderboardDomains(body: string): PrivateLeaderboardDomainsArtifact {
-  const parsed = JSON.parse(body) as Partial<PrivateLeaderboardDomainsArtifact>;
-  if (
-    typeof parsed.benchmark_version !== "string" ||
-    typeof parsed.captured_at !== "string" ||
-    parsed.task_set_kind !== "private_held_out" ||
-    !Array.isArray(parsed.domains)
-  ) {
-    throw new Error(
-      "zapier 私有 leaderboard domain artifact 形状不符合预期（benchmark_version/captured_at/task_set_kind/domains）",
-    );
-  }
-  return parsed as PrivateLeaderboardDomainsArtifact;
-}
-
 export interface PublicTaskDomain {
   name: string;
   n_tasks: number;

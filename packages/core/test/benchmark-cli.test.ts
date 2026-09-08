@@ -72,6 +72,8 @@ describe.skipIf(!hasBuild)("tpa CLI 端到端（collect-benchmark，spawn dist/t
       // 私有 held-out 与公开 600-task 仓库作为不同数据集标识同时出现
       expect(validation.value.benchmark.leaderboard_or_dataset_revision).toContain("private_held_out");
       expect(validation.value.benchmark.leaderboard_or_dataset_revision).toContain("public_600_task_repo");
+      // 公开仓库以 task_set.domains 表达，不进入 records
+      expect(validation.value.task_set.domains).toHaveLength(6);
       expect(validation.value.records.length).toBeGreaterThan(0);
     }
   });

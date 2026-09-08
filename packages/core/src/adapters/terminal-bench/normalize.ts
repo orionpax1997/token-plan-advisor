@@ -1,6 +1,6 @@
 import type { BenchmarkCollection, BenchmarkRecord, BenchmarkSourceRef } from "../../schema/benchmark.ts";
 import type { BenchmarkSnapshot } from "../_shared.ts";
-import { parseLeaderboard, parseTaskNames, type LeaderboardRow } from "./parse.ts";
+import { parseLeaderboard, type LeaderboardRow } from "./parse.ts";
 import { SRC } from "./sources.ts";
 
 // ---------------------------------------------------------------------------
@@ -161,7 +161,9 @@ function sourceSnapshot(row: LeaderboardRow, ctx: SnapshotContext) {
   return {
     source_ids: [SRC.hub],
     artifact: `leaderboard.json#rows[rank=${row.rank}, agent=${row.agent}, model=${row.model}, effort=${row.effort}]`,
-    revision: `dataset=${ctx.leaderboardUrl ? "leaderboard_4_0_0" : "unknown"}`,
+    // per-row revision：携带 leaderboard_4_0_0 + hub_updated_at + 本条 release_date，
+    // 避免所有 36 条 record 共用同一 revision 字符串。
+    revision: `leaderboard=4-0-0, hub_updated_at=${ctx.hubUpdatedAt}, row_release_date=${row.release_date}, captured_at=${ctx.capturedAt}`,
     url: ctx.leaderboardUrl,
     captured_at: ctx.capturedAt,
   };
@@ -269,12 +271,8 @@ export function normalizeFromSnapshots(
   }
 
   const leaderboard = parseLeaderboard(hubSnapshot.body);
-  const taskNames = parseTaskNames(tasksSnapshot.body);
-
-  if (taskNames.length !== leaderboard.n_tasks_in_set) {
-    // 任务数量与官方页面声明不一致；以官方 n_tasks_in_set 为准并进入 Unresolved Fact。
-    // 不静默更正。
-  }
+  // tasks.txt 的内容仅作为存在性证据（fixture manifest 装载验证 + 来源种类 = task_set_artifact），
+  // 不在 normalize 中逐条消费；任务数与语言分布以官方 leaderboard.n_tasks_in_set 为准。
 
   const capturedAt = hubSnapshot.captured_at;
   const ctx: SnapshotContext = {

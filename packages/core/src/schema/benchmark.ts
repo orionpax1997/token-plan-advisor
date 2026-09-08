@@ -305,6 +305,20 @@ export const BenchmarkCollection = z.strictObject({
     n_tasks: z.number().int().nonnegative(),
     n_repositories: z.number().int().nonnegative(),
     languages: z.array(z.strictObject({ language: z.string(), n_tasks: z.number().int().nonnegative() })),
+    /**
+     * 业务域划分（适用于按业务/能力域拆分任务的 benchmark，如 Zapier AutomationBench
+     * 的 6 个 business domain）。与 languages 并列，不互斥——同一 task set 可以同时声明
+     * 语言分布与业务域分布；不存在域信息的 benchmark 留空。
+     */
+    domains: z
+      .array(
+        z.strictObject({
+          domain: z.string(),
+          n_tasks: z.number().int().nonnegative(),
+          topics: z.array(z.string()).optional(),
+        }),
+      )
+      .optional(),
   }),
   records: z.array(BenchmarkRecord).min(1),
   sources: z.array(BenchmarkSourceRef).min(1),

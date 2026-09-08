@@ -239,4 +239,12 @@ describe("Terminal-Bench 4.0 Adapter（fixture 快照导入）", () => {
     // release date 出现在 license notes
     expect(collection.benchmark.license_and_access_notes.join("\n")).toContain("2026-09-03");
   });
+
+  it("per-row source_snapshot.revision 包含 leaderboard=4-0-0 + hub_updated_at + row_release_date + captured_at", () => {
+    const sample = collection.records.find((r) => r.raw_metric.metric_name === "accuracy")!;
+    expect(sample.source_snapshot.revision).toContain("leaderboard=4-0-0");
+    expect(sample.source_snapshot.revision).toContain(`hub_updated_at=${HUB_UPDATED_AT}`);
+    expect(sample.source_snapshot.revision).toContain("row_release_date=2026-09-03"); // Codex GPT-6 Astra max
+    expect(sample.source_snapshot.revision).toContain(`captured_at=${CAPTURED_AT}`);
+  });
 });

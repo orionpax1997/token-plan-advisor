@@ -1,6 +1,6 @@
 {
   "captured_at": "2026-09-08T06:35:00.000Z",
-  "note": "Zapier AutomationBench 1.0.6（2026-09-08 06:32:56 UTC 抓取 zapier.com/benchmarks 页面，记录 published time 与 last-modified；同日核对官方 GitHub zapier/AutomationBench 仓库 README/LICENSE/CHANGELOG/sales+tasks.py 等）。私有 held-out leaderboard 来自官方榜单页面（10 条可见 + 6 个 domain 摘要），公开 600-task 仓库任务清单来自仓库 README（6 domain × 100 tasks）。两个数据集标识（zapier-automationbench-private-leaderboard vs zapier-automationbench-public-tasks）分开记录，不互相补齐分数。",
+  "note": "Zapier AutomationBench 1.0.6（2026-09-08 06:32:56 UTC 抓取 zapier.com/benchmarks 页面，记录 published time 与 last-modified；同日核对官方 GitHub zapier/AutomationBench 仓库 README/LICENSE/CHANGELOG/sales+tasks.py 等）。私有 held-out leaderboard 来自官方榜单页面（10 条可见），公开 600-task 仓库任务清单来自仓库 README（6 domain × 100 tasks）。两个数据集标识（zapier-automationbench-private-leaderboard vs zapier-automationbench-public-tasks）分开记录，不互相补齐分数。",
   "sources": [
     {
       "source_id": "zapier-benchmarks-page",
@@ -15,11 +15,6 @@
     {
       "source_id": "zapier-private-leaderboard",
       "file": "private-leaderboard.json",
-      "url": "https://zapier.com/benchmarks"
-    },
-    {
-      "source_id": "zapier-private-leaderboard-domains",
-      "file": "private-leaderboard-domains.json",
       "url": "https://zapier.com/benchmarks"
     },
     {
