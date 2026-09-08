@@ -1,10 +1,6 @@
 import type { RawSnapshot } from "../../_shared.ts";
+import { bodyOf, normalizeEnglishDate } from "../../extract-shared.ts";
 import { SRC } from "./sources.ts";
-
-/** 从快照集合中取单个来源正文（失败或缺失时为空串）。 */
-function bodyOf(snapshots: RawSnapshot[], sourceId: string): string {
-  return snapshots.find((s) => s.source_id === sourceId)?.body ?? "";
-}
 
 /** 归因抽取结果：fact + 实际命中的来源 id（fact=null 表示全部候选未命中）。 */
 export interface Attributed<T> {
@@ -422,28 +418,15 @@ export interface ExtractedLaunchPromo {
 export function extractLaunchPromo(body: string): ExtractedLaunchPromo | null {
   const m = body.match(/Launch promotion: \$([\d,]+)\/M input and \$([\d,]+)\/M output through ([A-Za-z]+ \d{1,2}, \d{4})/);
   if (!m) return null;
-  const parsed = parseEnglishDate(m[3]!);
+  const parsed = normalizeEnglishDate(m[3]!);
   if (!parsed) return null;
   return { raw: m[0].trim(), effectiveUntil: parsed };
-}
-
-/** "August 31, 2026" → "2026-08-31"。 */
-export function parseEnglishDate(text: string): string | null {
-  const m = text.match(/([A-Za-z]+) (\d{1,2}), (\d{4})/);
-  if (!m) return null;
-  const months: Record<string, string> = {
-    January: "01", February: "02", March: "03", April: "04", May: "05", June: "06",
-    July: "07", August: "08", September: "09", October: "10", November: "11", December: "12",
-  };
-  const month = months[m[1]!];
-  if (!month) return null;
-  return `${m[3]}-${month}-${m[2]!.padStart(2, "0")}`;
 }
 
 /** 抽取页面自述更新时间（"Last updated August 13, 2026" / 博客 "Published June 16, 2025"）；无则 null。 */
 export function extractStatedDate(body: string): string | null {
   const m = body.match(/(?:Last updated|Published) ([A-Za-z]+ \d{1,2}, \d{4})/);
-  return m ? parseEnglishDate(m[1]!) : null;
+  return m ? normalizeEnglishDate(m[1]!) : null;
 }
 
 export interface ExtractedModelCatalog {

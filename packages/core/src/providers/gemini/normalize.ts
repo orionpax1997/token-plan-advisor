@@ -2,11 +2,18 @@ import type {
   PlanCollection,
   PlanCollectionPayload,
   PlanField,
-  SourceRef,
   UnresolvedFact,
 } from "../../schema/plan.ts";
 import type { RawSnapshot } from "../_shared.ts";
-import { deriveSourceChains, type ChainResolution } from "../_shared.ts";
+import { deriveSourceChains } from "../_shared.ts";
+import {
+  buildSources,
+  makeChainSrc,
+  notApplicable,
+  sortSourcesByRegistry,
+  unobtainable,
+  verified,
+} from "../normalize-shared.ts";
 import { extractFacts, extractStatedDate, type ExtractedFacts } from "./extract.ts";
 import { GEMINI_CHAINS, GEMINI_SOURCES } from "./sources.ts";
 
@@ -20,33 +27,6 @@ const CHAIN_BY_PURPOSE = {
   dataGov: GEMINI_CHAINS.find((c) => c.chain_id === "gemini-codeassist-data-policy")!,
   releaseNotes: GEMINI_CHAINS.find((c) => c.chain_id === "gemini-codeassist-release-notes")!,
 };
-
-function verified<T>(value: T, raw: string | undefined, sourceIds: string[]): PlanField<T> {
-  return {
-    value,
-    status: "verified",
-    ...(raw !== undefined ? { raw } : {}),
-    source_ids: sourceIds,
-  };
-}
-
-function unobtainable<T>(note?: string): PlanField<T> {
-  return {
-    value: null,
-    status: "unobtainable",
-    source_ids: [],
-    ...(note ? { note } : {}),
-  };
-}
-
-function notApplicable<T>(note?: string): PlanField<T> {
-  return {
-    value: null,
-    status: "not_applicable",
-    source_ids: [],
-    ...(note ? { note } : {}),
-  };
-}
 
 interface PlanSpec {
   plan_id: string;
@@ -76,13 +56,7 @@ export function normalizeCollection(input: {
 }): PlanCollectionPayload {
   const { snapshots, facts, mode, collectedAt, toolVersion } = input;
   const { chains: sourceChainsOut, resolution } = deriveSourceChains(snapshots, GEMINI_CHAINS);
-
-  function chainSrc(chainId: string): string[] {
-    const chosen = resolution.get(chainId);
-    if (chosen) return [chosen];
-    const chain = GEMINI_CHAINS.find((c) => c.chain_id === chainId);
-    return chain?.source_ids ?? [];
-  }
+  const chainSrc = makeChainSrc(resolution, GEMINI_CHAINS);
 
   const pricingSourceIds = chainSrc("gemini-codeassist-hourly");
   const monthlySourceIds = chainSrc("gemini-codeassist-monthly");
@@ -217,11 +191,11 @@ export function normalizeCollection(input: {
             `Requests per second: ${facts.rps}; subject to the availability of the service in times of high demand`,
             quotasSourceIds,
           )
-        : unobtainable("官方未公布 RPS"),
+        : unobtainable(undefined, "官方未公布 RPS"),
       context_window_tokens: facts.contextWindow.tokens !== null
         ? verified(facts.contextWindow.tokens, facts.contextWindow.raw, quotasSourceIds)
-        : unobtainable("官方未公布 1M token 上下文窗口原文"),
-      refund_policy: unobtainable("Google Cloud Billing 标准退款政策；订阅条目需在 Admin for Gemini 控制台查看"),
+        : unobtainable(undefined, "官方未公布 1M token 上下文窗口原文"),
+      refund_policy: unobtainable(undefined, "Google Cloud Billing 标准退款政策；订阅条目需在 Admin for Gemini 控制台查看"),
       cancellation_notice: verified(
         "All subscriptions are billed monthly；年度承诺为折扣费率按月收取；可在 Admin for Gemini 控制台查看/管理",
         "All subscriptions are billed monthly",
@@ -247,8 +221,8 @@ export function normalizeCollection(input: {
               facts.stateless,
               dataGovSourceIds,
             )
-          : unobtainable("官方未公布详细保留期限"),
-        zdr_offered: unobtainable("官方未声明 ZDR 选项；stateless 设计下训练隔离已就位"),
+          : unobtainable(undefined, "官方未公布详细保留期限"),
+        zdr_offered: unobtainable(undefined, "官方未声明 ZDR 选项；stateless 设计下训练隔离已就位"),
       },
     };
   });
@@ -257,26 +231,15 @@ export function normalizeCollection(input: {
   // 但保留状态可见性：可通过 promotions/unresolved_facts 反映
 
   // ---- 来源清单（三时间戳） ----
-  const sources: SourceRef[] = snapshots.map((snapshot) => {
-    const stated = extractStatedDate(snapshot.body);
-    return {
-      source_id: snapshot.source_id,
-      url: snapshot.url,
-      source_kind: snapshot.kind,
-      fetched_at: snapshot.fetched_at,
-      last_updated_at: stated,
-      ...(stated
-        ? { last_updated_note: "页面显示 Last updated" }
-        : { last_updated_note: "页面未显示更新时间（定价页/产品页），以采集时间为准" }),
-      http_status: snapshot.http_status,
-      ...(snapshot.failure_code !== undefined ? { failure_code: snapshot.failure_code } : {}),
-    };
-  });
-  sources.sort((a, b) => {
-    const orderA = GEMINI_SOURCES.findIndex((s) => s.source_id === a.source_id);
-    const orderB = GEMINI_SOURCES.findIndex((s) => s.source_id === b.source_id);
-    return orderA - orderB;
-  });
+  const sources = buildSources(
+    snapshots,
+    (snapshot) => extractStatedDate(snapshot.body),
+    (_snapshot, stated) =>
+      stated === null
+        ? "页面未显示更新时间（定价页/产品页），以采集时间为准"
+        : "页面显示 Last updated",
+  );
+  sortSourcesByRegistry(sources, GEMINI_SOURCES);
 
   // ---- 五维地区可用性 ----
   const regional_availability: PlanCollection["regional_availability"] = [
@@ -449,7 +412,7 @@ export function normalizeCollection(input: {
         "Maximum requests per user per day (Standard/Enterprise 分列)",
         quotasSourceIds,
       ),
-      formula: unobtainable("Gemini Code Assist 无积分/美元等值换算公式；限额按'日请求'直接给出"),
+      formula: unobtainable(undefined, "Gemini Code Assist 无积分/美元等值换算公式；限额按'日请求'直接给出"),
       model_multipliers: [],
       mcp_multipliers: [],
       off_peak_discount: notApplicable("官方未声明非高峰折扣"),

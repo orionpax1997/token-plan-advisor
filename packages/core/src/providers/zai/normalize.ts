@@ -1,38 +1,17 @@
 import type {
-  FailureCode,
   PlanCollection,
   PlanCollectionPayload,
   PlanField,
   QualityStatus,
   QuotaModel,
-  SourceRef,
   UnresolvedFact,
 } from "../../schema/plan.ts";
 import type { RawSnapshot } from "../_shared.ts";
+import { buildSources, unobtainable, verified } from "../normalize-shared.ts";
 import { SRC } from "./sources.ts";
 import { extractFacts, extractStatedDate, type ExtractedFacts } from "./extract.ts";
 
 const STALE_PRICE_NOTE = "2026-04-21 迁移公告所载官方价目，公告原文标注 based on current pricing, for reference only";
-
-/** 官方原文 + 来源齐全的已验证字段。 */
-function verified<T>(value: T, raw: string | undefined, sourceIds: string[]): PlanField<T> {
-  return {
-    value,
-    status: "verified",
-    ...(raw !== undefined ? { raw } : {}),
-    source_ids: sourceIds,
-  };
-}
-
-function unobtainable<T>(failureCode?: FailureCode, note?: string): PlanField<T> {
-  return {
-    value: null,
-    status: "unobtainable",
-    source_ids: [],
-    ...(failureCode ? { failure_code: failureCode } : {}),
-    ...(note ? { note } : {}),
-  };
-}
 
 const OVERVIEW_IDS = [SRC.overview];
 
@@ -415,25 +394,21 @@ export function normalizeCollection(input: {
     : [];
 
   // ---- 来源清单（三时间戳） ----
-  const sources: SourceRef[] = snapshots.map((snapshot) => {
-    const labels = STATED_DATE_LABELS[snapshot.source_id];
-    const stated = labels ? extractStatedDate(snapshot.body, labels) : null;
-    return {
-      source_id: snapshot.source_id,
-      url: snapshot.url,
-      source_kind: snapshot.kind,
-      fetched_at: snapshot.fetched_at,
-      last_updated_at: stated,
-      last_updated_note:
-        stated === null
-          ? "页面未显示更新时间，以采集时间为准"
-          : snapshot.kind === "announcement"
-            ? "页面显示 Publication date"
-            : "页面显示 Last Update",
-      http_status: snapshot.http_status,
-      failure_code: snapshot.failure_code,
-    };
-  });
+  // 抽取策略：法律页按 "Last Update"、公告按 "Publication date"（STATED_DATE_LABELS 标签表适配）
+  // note 策略：公告分支文案与法律页分支不同
+  const sources = buildSources(
+    snapshots,
+    (snapshot) => {
+      const labels = STATED_DATE_LABELS[snapshot.source_id];
+      return labels ? extractStatedDate(snapshot.body, labels) : null;
+    },
+    (snapshot, stated) =>
+      stated === null
+        ? "页面未显示更新时间，以采集时间为准"
+        : snapshot.kind === "announcement"
+          ? "页面显示 Publication date"
+          : "页面显示 Last Update",
+  );
 
   // ---- Unresolved Facts ----
   const unresolvedFacts: UnresolvedFact[] = [

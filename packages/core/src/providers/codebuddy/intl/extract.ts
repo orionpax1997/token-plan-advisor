@@ -1,26 +1,11 @@
 import type { RawSnapshot } from "../../_shared.ts";
+import { bodyOf, normalizeEnglishDate, pickBodyByChain } from "../../extract-shared.ts";
 
 /**
  * CodeBuddy 国际站确定性抽取。
  * 每个抽取结果保留命中的官方原文（raw），保证可追溯；
  * 抽取不到返回 null，由归一化层降级为 Unresolved Fact 而非猜测。
  */
-
-function bodyOf(snapshots: RawSnapshot[], sourceId: string): string {
-  return snapshots.find((s) => s.source_id === sourceId)?.body ?? "";
-}
-
-/** 按链顺序尝试读取首个非空 body；该链所有候选均无内容时返回空串。 */
-export function pickBodyByChain(
-  snapshots: RawSnapshot[],
-  chain: { source_ids: string[] },
-): string {
-  for (const id of chain.source_ids) {
-    const body = bodyOf(snapshots, id);
-    if (body.length > 0) return body;
-  }
-  return "";
-}
 
 const PLAN_LABELS = ["Free", "Pro", "Team"] as const;
 
@@ -130,18 +115,6 @@ export function extractStatedDate(body: string): string | null {
   const alt = body.match(/Last updated:\s*\(empty\)/);
   if (alt) return null;
   return null;
-}
-
-export function normalizeEnglishDate(text: string): string | null {
-  const m = text.match(/([A-Z][a-z]+)\s+(\d{1,2}),\s+(\d{4})/);
-  if (!m) return null;
-  const months: Record<string, string> = {
-    January: "01", February: "02", March: "03", April: "04", May: "05", June: "06",
-    July: "07", August: "08", September: "09", October: "10", November: "11", December: "12",
-  };
-  const month = months[m[1]!];
-  if (!month) return null;
-  return `${m[3]}-${month}-${m[2]!.padStart(2, "0")}`;
 }
 
 export interface ExtractedFacts {

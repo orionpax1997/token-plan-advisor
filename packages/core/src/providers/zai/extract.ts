@@ -1,4 +1,5 @@
 import type { RawSnapshot } from "../_shared.ts";
+import { bodyOf, normalizeEnglishDate } from "../extract-shared.ts";
 
 /**
  * 确定性抽取层：从 docs.z.ai 的 .md 原文与订阅页 meta 中提取原始事实。
@@ -28,18 +29,6 @@ export function extractStatedDate(body: string, labels: string[]): string | null
     if (m?.[1]) return normalizeEnglishDate(m[1]);
   }
   return null;
-}
-
-export function normalizeEnglishDate(text: string): string | null {
-  const m = text.match(/([A-Z][a-z]+) (\d{1,2}), (\d{4})/);
-  if (!m) return null;
-  const months: Record<string, string> = {
-    January: "01", February: "02", March: "03", April: "04", May: "05", June: "06",
-    July: "07", August: "08", September: "09", October: "10", November: "11", December: "12",
-  };
-  const month = months[m[1]!];
-  if (!month) return null;
-  return `${m[3]}-${month}-${m[2]!.padStart(2, "0")}`;
 }
 
 export interface ExtractedQuotaRow {
@@ -338,11 +327,6 @@ export function extractCampaign(body: string): ExtractedCampaign | null {
     raw: period[0],
     zero_quota_raw: zeroQuota,
   };
-}
-
-/** 从快照集合中取单个来源正文（失败或缺失时为空串）。 */
-export function bodyOf(snapshots: RawSnapshot[], sourceId: string): string {
-  return snapshots.find((s) => s.source_id === sourceId)?.body ?? "";
 }
 
 /** 汇总一次采集的全部抽取结果。 */

@@ -2,11 +2,18 @@ import type {
   PlanCollection,
   PlanCollectionPayload,
   PlanField,
-  SourceRef,
   UnresolvedFact,
 } from "../../../schema/plan.ts";
 import type { RawSnapshot } from "../../_shared.ts";
-import { deriveSourceChains, type ChainResolution } from "../../_shared.ts";
+import { deriveSourceChains } from "../../_shared.ts";
+import {
+  buildSources,
+  makeChainSrc,
+  notApplicable,
+  sortSourcesByRegistry,
+  unobtainable,
+  verified,
+} from "../../normalize-shared.ts";
 import { extractFacts, extractStatedDate, type ExtractedFacts } from "./extract.ts";
 import { TRAE_CN_CHAINS, TRAE_CN_SOURCES } from "./sources.ts";
 
@@ -19,33 +26,6 @@ const CHAIN_BY_PURPOSE = {
   quickstart: TRAE_CN_CHAINS.find((c) => c.chain_id === "trae-cn-registration")!,
   comingSoon: TRAE_CN_CHAINS.find((c) => c.chain_id === "trae-cn-billing-rules")!,
 };
-
-function verified<T>(value: T, raw: string | undefined, sourceIds: string[]): PlanField<T> {
-  return {
-    value,
-    status: "verified",
-    ...(raw !== undefined ? { raw } : {}),
-    source_ids: sourceIds,
-  };
-}
-
-function unobtainable<T>(note?: string): PlanField<T> {
-  return {
-    value: null,
-    status: "unobtainable",
-    source_ids: [],
-    ...(note ? { note } : {}),
-  };
-}
-
-function notApplicable<T>(note?: string): PlanField<T> {
-  return {
-    value: null,
-    status: "not_applicable",
-    source_ids: [],
-    ...(note ? { note } : {}),
-  };
-}
 
 interface PlanSpec {
   plan_id: string;
@@ -70,13 +50,7 @@ export function normalizeCollection(input: {
 }): PlanCollectionPayload {
   const { snapshots, facts, mode, collectedAt, toolVersion } = input;
   const { chains: sourceChainsOut, resolution } = deriveSourceChains(snapshots, TRAE_CN_CHAINS);
-
-  function chainSrc(chainId: string): string[] {
-    const chosen = resolution.get(chainId);
-    if (chosen) return [chosen];
-    const chain = TRAE_CN_CHAINS.find((c) => c.chain_id === chainId);
-    return chain?.source_ids ?? [];
-  }
+  const chainSrc = makeChainSrc(resolution, TRAE_CN_CHAINS);
 
   const pricingSourceIds = chainSrc("trae-cn-pricing");
   const billingSourceIds = chainSrc("trae-cn-billing-rules");
@@ -190,6 +164,7 @@ export function normalizeCollection(input: {
         window_type: "monthly",
         window_anchor: "from_subscription",
         amount: unobtainable(
+          undefined,
           `CN 计费周期：${facts.billingPeriod.periodDays} 个自然日（与国际版 Legacy 的 30 calendar days 不同）；积分按 31 个自然日发放/失效`,
         ),
         unit: "credits (周期：自然日)",
@@ -218,8 +193,8 @@ export function normalizeCollection(input: {
           : "高峰期优先使用：✅",
         billingSourceIds,
       ),
-      context_window_tokens: unobtainable("CN 文档未公布个人版产品级上下文窗口数值；Max 模式已在 2026-08-07 上线但个人版未提供模型 × 上下文分档表"),
-      refund_policy: unobtainable("CN 文档未给出个人会员退款条款"),
+      context_window_tokens: unobtainable(undefined, "CN 文档未公布个人版产品级上下文窗口数值；Max 模式已在 2026-08-07 上线但个人版未提供模型 × 上下文分档表"),
+      refund_policy: unobtainable(undefined, "CN 文档未给出个人会员退款条款"),
       cancellation_notice: verified(
         "支持连续包月；目前不支持将会员套餐降至更低档位；套餐到期后不再续费即可",
         "目前不支持将会员套餐降至更低档位",
@@ -237,8 +212,8 @@ export function normalizeCollection(input: {
           privacySourceIds,
         ),
         processing_location: verified("中国大陆", "TRAE CN 面向中国大陆市场运营；豆包大模型备案公示 (ide_intro-to-llm.md)", pricingSourceIds),
-        data_retention: unobtainable("CN 文档未公布积分/对话/代码库保留期限"),
-        zdr_offered: unobtainable("官方未声明 ZDR 选项"),
+        data_retention: unobtainable(undefined, "CN 文档未公布积分/对话/代码库保留期限"),
+        zdr_offered: unobtainable(undefined, "官方未声明 ZDR 选项"),
       },
     };
   });
@@ -246,8 +221,8 @@ export function normalizeCollection(input: {
   // ---- 模型清单 ----
   const models: PlanCollection["models"] = facts.models.models.map((m) => ({
     model_code: m.code,
-    release_date: unobtainable("官方未给出模型发布日期"),
-    deprecation_date: unobtainable("官方未给出模型弃用日期"),
+    release_date: unobtainable(undefined, "官方未给出模型发布日期"),
+    deprecation_date: unobtainable(undefined, "官方未给出模型弃用日期"),
     availability: [
       {
         plans: "all",
@@ -261,29 +236,19 @@ export function normalizeCollection(input: {
   }));
 
   // ---- 来源清单（三时间戳） ----
-  const sources: SourceRef[] = snapshots.map((snapshot) => {
-    const stated = extractStatedDate(snapshot.body);
-    const isPricingPage = snapshot.source_id === "trae-cn-pricing";
-    return {
-      source_id: snapshot.source_id,
-      url: snapshot.url,
-      source_kind: snapshot.kind,
-      fetched_at: snapshot.fetched_at,
-      last_updated_at: stated,
-      ...(stated
-        ? { last_updated_note: "页面显示更新时间" }
-        : isPricingPage
-          ? { last_updated_note: "客户端渲染定价页（RENDER_DEPENDENT），仅获取页头导航与标题；无页面级更新时间，以采集时间为准" }
-          : { last_updated_note: "页面未显示更新时间（docs.trae.cn），以采集时间为准" }),
-      http_status: snapshot.http_status,
-      ...(snapshot.failure_code !== undefined ? { failure_code: snapshot.failure_code } : {}),
-    };
-  });
-  sources.sort((a, b) => {
-    const orderA = TRAE_CN_SOURCES.findIndex((s) => s.source_id === a.source_id);
-    const orderB = TRAE_CN_SOURCES.findIndex((s) => s.source_id === b.source_id);
-    return orderA - orderB;
-  });
+  // note 策略三分支：有自述时间 / 客户端渲染定价页（RENDER_DEPENDENT）/ 无页面级时间
+  const sources = buildSources(
+    snapshots,
+    (snapshot) => extractStatedDate(snapshot.body),
+    (snapshot, stated) => {
+      const isPricingPage = snapshot.source_id === "trae-cn-pricing";
+      if (stated !== null) return "页面显示更新时间";
+      return isPricingPage
+        ? "客户端渲染定价页（RENDER_DEPENDENT），仅获取页头导航与标题；无页面级更新时间，以采集时间为准"
+        : "页面未显示更新时间（docs.trae.cn），以采集时间为准";
+    },
+  );
+  sortSourcesByRegistry(sources, TRAE_CN_SOURCES);
 
   // ---- 五维地区可用性（CN：无地区清单如实标注为未确认） ----
   const regional_availability: PlanCollection["regional_availability"] = [
@@ -373,8 +338,8 @@ export function normalizeCollection(input: {
     vendor: { vendor_id: "bytedance-trae", display_name: "TRAE（CN, ByteDance）" },
     regional_variant: {
       variant_id: "trae-cn",
-      operator_entity: unobtainable("TRAE CN 运营主体官方未单独声明；ByteDance 旗下产品"),
-      jurisdiction: unobtainable("CN 文档未发布官方地区政策声明；运营法域按中国大陆事实性观察（不替代官方声明）"),
+      operator_entity: unobtainable(undefined, "TRAE CN 运营主体官方未单独声明；ByteDance 旗下产品"),
+      jurisdiction: unobtainable(undefined, "CN 文档未发布官方地区政策声明；运营法域按中国大陆事实性观察（不替代官方声明）"),
     },
     payment: {
       methods: facts.paymentMethods.length > 0
@@ -388,7 +353,7 @@ export function normalizeCollection(input: {
     quota_system: {
       quota_model: "credits_5h_weekly",
       unit: verified("credits (积分)", "积分：TRAE CN 的额度单位", billingSourceIds),
-      formula: unobtainable("TRAE CN 个人版未公开各模型积分消耗率（黑盒）"),
+      formula: unobtainable(undefined, "TRAE CN 个人版未公开各模型积分消耗率（黑盒）"),
       model_multipliers: [],
       mcp_multipliers: [],
       off_peak_discount: verified(

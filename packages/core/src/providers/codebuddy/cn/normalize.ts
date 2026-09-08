@@ -2,11 +2,17 @@ import type {
   PlanCollection,
   PlanCollectionPayload,
   PlanField,
-  SourceRef,
   UnresolvedFact,
 } from "../../../schema/plan.ts";
 import type { RawSnapshot } from "../../_shared.ts";
-import { deriveSourceChains, type ChainResolution } from "../../_shared.ts";
+import { deriveSourceChains } from "../../_shared.ts";
+import {
+  buildSources,
+  makeChainSrc,
+  sortSourcesByRegistry,
+  unobtainable,
+  verified,
+} from "../../normalize-shared.ts";
 import { extractFacts, extractStatedDate, type ExtractedFacts } from "./extract.ts";
 import { CODEBUDDY_CN_CHAINS, CODEBUDDY_CN_SOURCES, SRC } from "./sources.ts";
 
@@ -21,25 +27,7 @@ const CHAIN_BY_PURPOSE = {
 const PROMOTION_DOUBLE_CREDITS_NOTE =
   "加赠积分/月（限时）=基础积分/月；活动区间外的标准价为'基础积分/月'列";
 
-/** 已验证字段的工厂：value + raw + source_ids。 */
-function verified<T>(value: T, raw: string | undefined, sourceIds: string[]): PlanField<T> {
-  return {
-    value,
-    status: "verified",
-    ...(raw !== undefined ? { raw } : {}),
-    source_ids: sourceIds,
-  };
-}
-
-function unobtainable<T>(note?: string): PlanField<T> {
-  return {
-    value: null,
-    status: "unobtainable",
-    source_ids: [],
-    ...(note ? { note } : {}),
-  };
-}
-
+/** 已验证字段的工厂：value + raw + source_ids（从 normalize-shared 引入）。 */
 interface PlanSpec {
   plan_id: string;
   plan_name: string;
@@ -69,17 +57,8 @@ export function normalizeCollection(input: {
 }): PlanCollectionPayload {
   const { snapshots, facts, mode, collectedAt, toolVersion } = input;
   const { chains: sourceChainsOut, resolution } = deriveSourceChains(snapshots, CODEBUDDY_CN_CHAINS);
-
-  /**
-   * 取得链内首个 ok=true 来源的 id；整链失败时退回到该链的候选数组第一个。
-   * 用作字段级 source_ids，保证"实际使用的来源与回退路径可从 CLI 输出追溯"。
-   */
-  function chainSrc(chainId: string): string[] {
-    const chosen = resolution.get(chainId);
-    if (chosen) return [chosen];
-    const chain = CODEBUDDY_CN_CHAINS.find((c) => c.chain_id === chainId);
-    return chain?.source_ids ?? [];
-  }
+  // 字段级 source_ids：链内首个 ok 来源，整链失败回退候选数组（可从 CLI 输出追溯）
+  const chainSrc = makeChainSrc(resolution, CODEBUDDY_CN_CHAINS);
 
   const pricingSourceIds = chainSrc("codebuddy-cn-pricing");
   const creditsSourceIds = chainSrc("codebuddy-cn-credits-rules");
@@ -197,7 +176,7 @@ export function normalizeCollection(input: {
         isFree ? "高频使用对话和问答时会触发限频" : "对话问答不限频",
         pricingSourceIds,
       ),
-      context_window_tokens: unobtainable("官方未给出 Coding Plan 上下文窗口数值；仅个别模型简介标 1M 上下文"),
+      context_window_tokens: unobtainable(undefined, "官方未给出 Coding Plan 上下文窗口数值；仅个别模型简介标 1M 上下文"),
       refund_policy: verified(
         "个人版订阅一经购买不支持退款；加量包一经购买不支持退款",
         "个人版订阅一经购买不支持退款；加量包一经购买不支持退款",
@@ -225,7 +204,7 @@ export function normalizeCollection(input: {
           "基础积分：自发放日起 1 个月内有效；加赠积分：自发放日起 1 个月内有效；赠送积分：自到账日起 1 个月内有效",
           creditsSourceIds,
         ),
-        zdr_offered: unobtainable("官方未声明 ZDR 选项"),
+        zdr_offered: unobtainable(undefined, "官方未声明 ZDR 选项"),
       },
     };
   });
@@ -320,8 +299,8 @@ export function normalizeCollection(input: {
   // ---- 模型清单 ----
   const models: PlanCollection["models"] = facts.modelList.models.map((m) => ({
     model_code: m.code,
-    release_date: unobtainable("官方未给出模型发布日期"),
-    deprecation_date: unobtainable("官方未给出模型弃用日期"),
+    release_date: unobtainable(undefined, "官方未给出模型发布日期"),
+    deprecation_date: unobtainable(undefined, "官方未给出模型弃用日期"),
     availability: [
       {
         plans: "all",
@@ -349,21 +328,12 @@ export function normalizeCollection(input: {
   }
 
   // ---- 来源清单（三时间戳） ----
-  const sources: SourceRef[] = snapshots.map((snapshot) => {
-    const stated = extractStatedDate(snapshot.body);
-    return {
-      source_id: snapshot.source_id,
-      url: snapshot.url,
-      source_kind: snapshot.kind,
-      fetched_at: snapshot.fetched_at,
-      last_updated_at: stated,
-      ...(stated
-        ? { last_updated_note: "页面显示 '最近更新时间'" }
-        : { last_updated_note: "页面未显示更新时间，以采集时间为准" }),
-      http_status: snapshot.http_status,
-      ...(snapshot.failure_code !== undefined ? { failure_code: snapshot.failure_code } : {}),
-    };
-  });
+  const sources = buildSources(
+    snapshots,
+    (snapshot) => extractStatedDate(snapshot.body),
+    (_snapshot, stated) =>
+      stated === null ? "页面未显示更新时间，以采集时间为准" : "页面显示 '最近更新时间'",
+  );
 
   // ---- 五维地区可用性 ----
   const regional_availability: PlanCollection["regional_availability"] = [
@@ -464,11 +434,7 @@ export function normalizeCollection(input: {
   const source_chains = sourceChainsOut;
 
   // 将来源清单按 registry 排序，便于阅读
-  sources.sort((a, b) => {
-    const orderA = CODEBUDDY_CN_SOURCES.findIndex((s) => s.source_id === a.source_id);
-    const orderB = CODEBUDDY_CN_SOURCES.findIndex((s) => s.source_id === b.source_id);
-    return orderA - orderB;
-  });
+  sortSourcesByRegistry(sources, CODEBUDDY_CN_SOURCES);
 
   return {
     schema_version: "1",
@@ -504,11 +470,11 @@ export function normalizeCollection(input: {
             facts.creditFormula,
             creditsSourceIds,
           )
-        : unobtainable("官方仅声明黑盒规则，未给出除数"),
+        : unobtainable(undefined, "官方仅声明黑盒规则，未给出除数"),
       model_multipliers: [],
       mcp_multipliers: [],
-      off_peak_discount: unobtainable("credits 体系无公开的非高峰折扣"),
-      peak_hours: unobtainable("credits 体系无公开的高峰时段定义"),
+      off_peak_discount: unobtainable(undefined, "credits 体系无公开的非高峰折扣"),
+      peak_hours: unobtainable(undefined, "credits 体系无公开的高峰时段定义"),
     },
     models,
     plans,

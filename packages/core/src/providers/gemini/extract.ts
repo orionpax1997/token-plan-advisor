@@ -1,26 +1,11 @@
 import type { RawSnapshot } from "../_shared.ts";
+import { bodyOf, pickBodyByChain } from "../extract-shared.ts";
 
 /**
  * Gemini Code Assist 确定性抽取：从 Google Cloud / codeassist.google / docs 站抽取
  * 价格、限额、模型、注册要求等事实。每个抽取结果保留命中的官方原文（raw），
  * 保证可追溯；抽取不到返回 null，由归一化层降级为 Unresolved Fact 而非猜测。
  */
-
-function bodyOf(snapshots: RawSnapshot[], sourceId: string): string {
-  return snapshots.find((s) => s.source_id === sourceId)?.body ?? "";
-}
-
-/** 按链顺序尝试读取首个非空 body；该链所有候选均无内容时返回空串。 */
-export function pickBodyByChain(
-  snapshots: RawSnapshot[],
-  chain: { source_ids: string[] },
-): string {
-  for (const id of chain.source_ids) {
-    const body = bodyOf(snapshots, id);
-    if (body.length > 0) return body;
-  }
-  return "";
-}
 
 // ---------------------------------------------------------------------------
 // 双口径价格（Hourly / Monthly）

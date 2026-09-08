@@ -2,11 +2,18 @@ import type {
   PlanCollection,
   PlanCollectionPayload,
   PlanField,
-  SourceRef,
   UnresolvedFact,
 } from "../../../schema/plan.ts";
 import type { RawSnapshot } from "../../_shared.ts";
-import { deriveSourceChains, type ChainResolution } from "../../_shared.ts";
+import { deriveSourceChains } from "../../_shared.ts";
+import {
+  buildSources,
+  makeChainSrc,
+  notApplicable,
+  sortSourcesByRegistry,
+  unobtainable,
+  verified,
+} from "../../normalize-shared.ts";
 import { extractFacts, extractStatedDate, type ExtractedFacts } from "./extract.ts";
 import { TRAE_INTL_CHAINS, TRAE_INTL_SOURCES } from "./sources.ts";
 
@@ -21,33 +28,6 @@ const CHAIN_BY_PURPOSE = {
   privacy: TRAE_INTL_CHAINS.find((c) => c.chain_id === "trae-intl-privacy")!,
   legacy: TRAE_INTL_CHAINS.find((c) => c.chain_id === "trae-intl-legacy-billing")!,
 };
-
-function verified<T>(value: T, raw: string | undefined, sourceIds: string[]): PlanField<T> {
-  return {
-    value,
-    status: "verified",
-    ...(raw !== undefined ? { raw } : {}),
-    source_ids: sourceIds,
-  };
-}
-
-function unobtainable<T>(note?: string): PlanField<T> {
-  return {
-    value: null,
-    status: "unobtainable",
-    source_ids: [],
-    ...(note ? { note } : {}),
-  };
-}
-
-function notApplicable<T>(note?: string): PlanField<T> {
-  return {
-    value: null,
-    status: "not_applicable",
-    source_ids: [],
-    ...(note ? { note } : {}),
-  };
-}
 
 interface PlanSpec {
   plan_id: string;
@@ -73,14 +53,7 @@ export function normalizeCollection(input: {
 }): PlanCollectionPayload {
   const { snapshots, facts, mode, collectedAt, toolVersion } = input;
   const { chains: sourceChainsOut, resolution } = deriveSourceChains(snapshots, TRAE_INTL_CHAINS);
-
-  /** 取得链内首个 ok=true 来源的 id；整链失败时退回到该链的候选数组第一个。 */
-  function chainSrc(chainId: string): string[] {
-    const chosen = resolution.get(chainId);
-    if (chosen) return [chosen];
-    const chain = TRAE_INTL_CHAINS.find((c) => c.chain_id === chainId);
-    return chain?.source_ids ?? [];
-  }
+  const chainSrc = makeChainSrc(resolution, TRAE_INTL_CHAINS);
 
   const pricingSourceIds = chainSrc("trae-intl-pricing");
   const faqSourceIds = chainSrc("trae-intl-billing-rules");
@@ -160,7 +133,7 @@ export function normalizeCollection(input: {
     windows.push({
       window_type: "monthly",
       window_anchor: "from_subscription",
-      amount: unobtainable("官方明确 Bonus Usage 'based on your actual use'，无数值"),
+      amount: unobtainable(undefined, "官方明确 Bonus Usage 'based on your actual use'，无数值"),
       unit: "USD (Bonus Usage)",
       status: "unobtainable",
       raw: "Bonus Usage: an additional flexible usage each month based on your actual use",
@@ -171,7 +144,7 @@ export function normalizeCollection(input: {
       windows.push({
         window_type: "monthly",
         window_anchor: "from_subscription",
-        amount: unobtainable("On-Demand 无固定数值；按实际 token × 模型 API 费率结算"),
+        amount: unobtainable(undefined, "On-Demand 无固定数值；按实际 token × 模型 API 费率结算"),
         unit: "USD (On-Demand Usage)",
         status: "unobtainable",
         raw: facts.onDemand.threshold ?? "Each time the accumulated amount reaches $3, a payment will be triggered",
@@ -225,9 +198,9 @@ export function normalizeCollection(input: {
           facts.privacyMode.usTraining ?? "US privacy policy: 暂时上传代码库用于计算 embeddings, 训练改进技术",
           privacySourceIds,
         ),
-        processing_location: unobtainable("官方未声明 TRAE 后端架构位置"),
-        data_retention: unobtainable("官方未披露 TRAE 服务端保留政策"),
-        zdr_offered: unobtainable("官方未声明 ZDR 选项"),
+        processing_location: unobtainable(undefined, "官方未声明 TRAE 后端架构位置"),
+        data_retention: unobtainable(undefined, "官方未披露 TRAE 服务端保留政策"),
+        zdr_offered: unobtainable(undefined, "官方未声明 ZDR 选项"),
       },
     };
   });
@@ -235,8 +208,8 @@ export function normalizeCollection(input: {
   // ---- 模型清单 ----
   const models: PlanCollection["models"] = facts.models.models.map((m) => ({
     model_code: m.code,
-    release_date: unobtainable("官方未给出模型发布日期"),
-    deprecation_date: unobtainable("官方未给出模型弃用日期"),
+    release_date: unobtainable(undefined, "官方未给出模型发布日期"),
+    deprecation_date: unobtainable(undefined, "官方未给出模型弃用日期"),
     availability: [
       {
         plans: "all",
@@ -250,32 +223,22 @@ export function normalizeCollection(input: {
   }));
 
   // ---- 来源清单（三时间戳） ----
-  const sources: SourceRef[] = snapshots.map((snapshot) => {
-    const stated = extractStatedDate(snapshot.body);
-    // 区分 JS 渲染失败页与正常文档页
-    const isPricingPage = snapshot.source_id === "trae-intl-pricing";
-    return {
-      source_id: snapshot.source_id,
-      url: snapshot.url,
-      source_kind: snapshot.kind,
-      fetched_at: snapshot.fetched_at,
-      last_updated_at: stated,
-      ...(stated
-        ? { last_updated_note: "页面显示 Last updated" }
-        : isPricingPage
-          ? { last_updated_note: "客户端渲染定价页（RENDER_DEPENDENT），仅保留页脚联系邮箱；无页面级更新时间，以采集时间为准" }
-          : { last_updated_note: "页面未显示更新时间（docs.trae.ai 站点级 updated_at 2026-08-26），以采集时间为准" }),
-      http_status: snapshot.http_status,
-      ...(snapshot.failure_code !== undefined ? { failure_code: snapshot.failure_code } : {}),
-    };
-  });
+  // note 策略三分支：有自述时间 / 客户端渲染定价页（RENDER_DEPENDENT）/ 站点级 updated_at 兑底
+  const sources = buildSources(
+    snapshots,
+    (snapshot) => extractStatedDate(snapshot.body),
+    (snapshot, stated) => {
+      // 区分 JS 渲染失败页与正常文档页
+      const isPricingPage = snapshot.source_id === "trae-intl-pricing";
+      if (stated !== null) return "页面显示 Last updated";
+      return isPricingPage
+        ? "客户端渲染定价页（RENDER_DEPENDENT），仅保留页脚联系邮箱；无页面级更新时间，以采集时间为准"
+        : "页面未显示更新时间（docs.trae.ai 站点级 updated_at 2026-08-26），以采集时间为准";
+    },
+  );
 
   // 排序
-  sources.sort((a, b) => {
-    const orderA = TRAE_INTL_SOURCES.findIndex((s) => s.source_id === a.source_id);
-    const orderB = TRAE_INTL_SOURCES.findIndex((s) => s.source_id === b.source_id);
-    return orderA - orderB;
-  });
+  sortSourcesByRegistry(sources, TRAE_INTL_SOURCES);
 
   // ---- 五维地区可用性（CN/HK/MO/GLOBAL 四区） ----
   // research/04 §5.1：trae.ai 不对中国大陆/港澳/台湾开放产品整体可用性
@@ -534,7 +497,7 @@ export function normalizeCollection(input: {
     vendor: { vendor_id: "bytedance-trae", display_name: "TRAE（International, ByteDance）" },
     regional_variant: {
       variant_id: "trae-intl",
-      operator_entity: unobtainable("Trae 国际版运营主体官方未单独声明；ByteDance 旗下产品"),
+      operator_entity: unobtainable(undefined, "Trae 国际版运营主体官方未单独声明；ByteDance 旗下产品"),
       jurisdiction: verified(
         "适用 Supported countries and regions 清单（41 国/地区）",
         "TRAE is currently available in the following countries and regions",

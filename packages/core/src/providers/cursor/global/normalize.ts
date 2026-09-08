@@ -4,12 +4,18 @@ import type {
   PlanField,
   QualityStatus,
   QuotaWindow,
-  SourceRef,
   UnresolvedFact,
 } from "../../../schema/plan.ts";
-import type { FailureCode } from "../../../schema/plan.ts";
 import type { RawSnapshot } from "../../_shared.ts";
-import { deriveSourceChains, type ChainResolution } from "../../_shared.ts";
+import { deriveSourceChains } from "../../_shared.ts";
+import {
+  buildSources,
+  makeChainSrc,
+  notApplicable,
+  sortSourcesByRegistry,
+  unobtainable,
+  verified,
+} from "../../normalize-shared.ts";
 import {
   extractFacts,
   extractStatedDate,
@@ -17,36 +23,6 @@ import {
   type ExtractedFacts,
 } from "./extract.ts";
 import { CURSOR_CHAINS, CURSOR_SOURCES, SRC } from "./sources.ts";
-
-/** 已验证字段的工厂：value + raw + source_ids。 */
-function verified<T>(value: T, raw: string | undefined, sourceIds: string[]): PlanField<T> {
-  return {
-    value,
-    status: "verified",
-    ...(raw !== undefined ? { raw } : {}),
-    source_ids: sourceIds,
-  };
-}
-
-function unobtainable<T>(failureCode?: FailureCode, note?: string): PlanField<T> {
-  return {
-    value: null,
-    status: "unobtainable",
-    source_ids: [],
-    ...(failureCode ? { failure_code: failureCode } : {}),
-    ...(note ? { note } : {}),
-  };
-}
-
-/** 不适用字段的工厂：usd_equivalence 体系下积分公式/高峰时段等概念整体不适用。 */
-function notApplicable<T>(note?: string): PlanField<T> {
-  return {
-    value: null,
-    status: "not_applicable",
-    source_ids: [],
-    ...(note ? { note } : {}),
-  };
-}
 
 /**
  * 归因结果 → 字段级 source_ids。
@@ -103,14 +79,8 @@ export function normalizeCollection(input: {
 }): PlanCollectionPayload {
   const { snapshots, facts, mode, collectedAt, toolVersion } = input;
   const { chains: sourceChainsOut, resolution } = deriveSourceChains(snapshots, CURSOR_CHAINS);
-
   /** 取得链内首个 ok=true 来源的 id；整链失败时退回到该链的候选数组（用于无归因的字段）。 */
-  function chainSrc(chainId: string): string[] {
-    const chosen = resolution.get(chainId);
-    if (chosen) return [chosen];
-    const chain = CURSOR_CHAINS.find((c) => c.chain_id === chainId);
-    return chain?.source_ids ?? [];
-  }
+  const chainSrc = makeChainSrc(resolution, CURSOR_CHAINS);
 
   const pricingSourceIds = chainSrc("cursor-pricing");
   const quotaSourceIds = chainSrc("cursor-quota-pools");
@@ -448,29 +418,15 @@ export function normalizeCollection(input: {
   }
 
   // ---- 来源清单（三时间戳）----
-  const sources: SourceRef[] = snapshots.map((snapshot) => {
-    const stated = extractStatedDate(snapshot.body);
-    return {
-      source_id: snapshot.source_id,
-      url: snapshot.url,
-      source_kind: snapshot.kind,
-      fetched_at: snapshot.fetched_at,
-      last_updated_at: stated,
-      ...(stated
-        ? { last_updated_note: "页面显示 'Last updated'/'Published' 时间" }
-        : {
-            last_updated_note:
-              "页面未显示更新时间（帮助中心/文档/营销页均无页面级时间戳），以采集时间为准",
-          }),
-      http_status: snapshot.http_status,
-      ...(snapshot.failure_code !== undefined ? { failure_code: snapshot.failure_code } : {}),
-    };
-  });
-  sources.sort((a, b) => {
-    const orderA = CURSOR_SOURCES.findIndex((s) => s.source_id === a.source_id);
-    const orderB = CURSOR_SOURCES.findIndex((s) => s.source_id === b.source_id);
-    return orderA - orderB;
-  });
+  const sources = buildSources(
+    snapshots,
+    (snapshot) => extractStatedDate(snapshot.body),
+    (_snapshot, stated) =>
+      stated === null
+        ? "页面未显示更新时间（帮助中心/文档/营销页均无页面级时间戳），以采集时间为准"
+        : "页面显示 'Last updated'/'Published' 时间",
+  );
+  sortSourcesByRegistry(sources, CURSOR_SOURCES);
 
   // ---- 五维地区可用性 ----
   const regional_availability: PlanCollection["regional_availability"] = [

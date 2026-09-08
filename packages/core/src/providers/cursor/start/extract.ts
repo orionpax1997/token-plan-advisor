@@ -1,10 +1,6 @@
 import type { RawSnapshot } from "../../_shared.ts";
+import { bodyOf, normalizeEnglishDate } from "../../extract-shared.ts";
 import { SRC } from "./sources.ts";
-
-/** 从快照集合中取单个来源正文（失败或缺失时为空串）。 */
-function bodyOf(snapshots: RawSnapshot[], sourceId: string): string {
-  return snapshots.find((s) => s.source_id === sourceId)?.body ?? "";
-}
 
 /** 归因抽取结果：fact + 实际命中的来源 id（fact=null 表示全部候选未命中）。 */
 export interface Attributed<T> {
@@ -80,15 +76,7 @@ export function extractNoOnDemand(body: string): string | null {
 export function extractStatedDate(body: string): string | null {
   const m = body.match(/(?:Last updated|Published) ([A-Za-z]+ \d{1,2}, \d{4})/);
   if (!m) return null;
-  const months: Record<string, string> = {
-    January: "01", February: "02", March: "03", April: "04", May: "05", June: "06",
-    July: "07", August: "08", September: "09", October: "10", November: "11", December: "12",
-  };
-  const d = m[1]!.match(/([A-Za-z]+) (\d{1,2}), (\d{4})/);
-  if (!d) return null;
-  const month = months[d[1]!];
-  if (!month) return null;
-  return `${d[3]}-${month}-${d[2]!.padStart(2, "0")}`;
+  return normalizeEnglishDate(m[1]!);
 }
 
 /** 一次采集的全部归因抽取结果。 */

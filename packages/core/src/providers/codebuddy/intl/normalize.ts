@@ -2,11 +2,17 @@ import type {
   PlanCollection,
   PlanCollectionPayload,
   PlanField,
-  SourceRef,
   UnresolvedFact,
 } from "../../../schema/plan.ts";
 import type { RawSnapshot } from "../../_shared.ts";
 import { deriveSourceChains } from "../../_shared.ts";
+import {
+  buildSources,
+  makeChainSrc,
+  sortSourcesByRegistry,
+  unobtainable,
+  verified,
+} from "../../normalize-shared.ts";
 import { extractFacts, extractStatedDate, type ExtractedFacts } from "./extract.ts";
 import { CODEBUDDY_INTL_CHAINS, CODEBUDDY_INTL_SOURCES, SRC } from "./sources.ts";
 
@@ -16,24 +22,6 @@ const CHAIN_BY_PURPOSE = {
   legacy: CODEBUDDY_INTL_CHAINS.find((c) => c.chain_id === "codebuddy-intl-legacy-pricing")!,
   privacy: CODEBUDDY_INTL_CHAINS.find((c) => c.chain_id === "codebuddy-intl-privacy")!,
 };
-
-function verified<T>(value: T, raw: string | undefined, sourceIds: string[]): PlanField<T> {
-  return {
-    value,
-    status: "verified",
-    ...(raw !== undefined ? { raw } : {}),
-    source_ids: sourceIds,
-  };
-}
-
-function unobtainable<T>(note?: string): PlanField<T> {
-  return {
-    value: null,
-    status: "unobtainable",
-    source_ids: [],
-    ...(note ? { note } : {}),
-  };
-}
 
 interface PlanSpec {
   plan_id: string;
@@ -57,14 +45,7 @@ export function normalizeCollection(input: {
 }): PlanCollectionPayload {
   const { snapshots, facts, mode, collectedAt, toolVersion } = input;
   const { chains: sourceChainsOut, resolution } = deriveSourceChains(snapshots, CODEBUDDY_INTL_CHAINS);
-
-  /** 取得链内首个 ok=true 来源的 id；整链失败时退回到该链的候选数组第一个。 */
-  function chainSrc(chainId: string): string[] {
-    const chosen = resolution.get(chainId);
-    if (chosen) return [chosen];
-    const chain = CODEBUDDY_INTL_CHAINS.find((c) => c.chain_id === chainId);
-    return chain?.source_ids ?? [];
-  }
+  const chainSrc = makeChainSrc(resolution, CODEBUDDY_INTL_CHAINS);
 
   const pricingSourceIds = chainSrc("codebuddy-intl-pricing");
   const billingSourceIds = chainSrc("codebuddy-intl-billing-rules");
@@ -172,7 +153,7 @@ export function normalizeCollection(input: {
           : "Unlimited completions; 15 (99 during the promotional period) Automated Tasks; 50 credits/day Promotional Bonus",
         pricingSourceIds,
       ),
-      context_window_tokens: unobtainable("国际站未给出产品级上下文窗口；CLI models.json 仅有用户自定义模型的 maxInputTokens"),
+      context_window_tokens: unobtainable(undefined, "国际站未给出产品级上下文窗口；CLI models.json 仅有用户自定义模型的 maxInputTokens"),
       refund_policy: verified(
         "Add-on packs一次性购买不可退款；Pro/Team 订阅按 Billing Overview 条款管理",
         "Add-on packs一次性购买不可退款",
@@ -204,7 +185,7 @@ export function normalizeCollection(input: {
           "IP addresses: retained for 180 days; Backend logs: retained for 14 days; Account deletion: information deleted within 30 days",
           privacySourceIds,
         ),
-        zdr_offered: unobtainable("官方未声明 ZDR 选项"),
+        zdr_offered: unobtainable(undefined, "官方未声明 ZDR 选项"),
       },
     };
   });
@@ -257,21 +238,14 @@ export function normalizeCollection(input: {
   });
 
   // ---- 来源清单 ----
-  const sources: SourceRef[] = snapshots.map((snapshot) => {
-    const stated = extractStatedDate(snapshot.body);
-    return {
-      source_id: snapshot.source_id,
-      url: snapshot.url,
-      source_kind: snapshot.kind,
-      fetched_at: snapshot.fetched_at,
-      last_updated_at: stated,
-      ...(stated
-        ? { last_updated_note: "页面显示 'Last updated'" }
-        : { last_updated_note: "页面未显示更新时间（codebuddy.ai docs 首页/定价页），以采集时间为准" }),
-      http_status: snapshot.http_status,
-      ...(snapshot.failure_code !== undefined ? { failure_code: snapshot.failure_code } : {}),
-    };
-  });
+  const sources = buildSources(
+    snapshots,
+    (snapshot) => extractStatedDate(snapshot.body),
+    (_snapshot, stated) =>
+      stated === null
+        ? "页面未显示更新时间（codebuddy.ai docs 首页/定价页），以采集时间为准"
+        : "页面显示 'Last updated'",
+  );
 
   // ---- 五维地区可用性 ----
   const regional_availability: PlanCollection["regional_availability"] = [
@@ -376,11 +350,7 @@ export function normalizeCollection(input: {
   const source_chains = sourceChainsOut;
 
   // 排序
-  sources.sort((a, b) => {
-    const orderA = CODEBUDDY_INTL_SOURCES.findIndex((s) => s.source_id === a.source_id);
-    const orderB = CODEBUDDY_INTL_SOURCES.findIndex((s) => s.source_id === b.source_id);
-    return orderA - orderB;
-  });
+  sortSourcesByRegistry(sources, CODEBUDDY_INTL_SOURCES);
 
   return {
     schema_version: "1",
@@ -410,11 +380,11 @@ export function normalizeCollection(input: {
     quota_system: {
       quota_model: "credits_5h_weekly",
       unit: verified("credits", "credits", pricingSourceIds),
-      formula: unobtainable("国际站公开页面无 Credits 消耗换算公式（黑盒）"),
+      formula: unobtainable(undefined, "国际站公开页面无 Credits 消耗换算公式（黑盒）"),
       model_multipliers: [],
       mcp_multipliers: [],
-      off_peak_discount: unobtainable("credits 体系无公开的非高峰折扣"),
-      peak_hours: unobtainable("credits 体系无公开的高峰时段定义"),
+      off_peak_discount: unobtainable(undefined, "credits 体系无公开的非高峰折扣"),
+      peak_hours: unobtainable(undefined, "credits 体系无公开的高峰时段定义"),
     },
     models,
     plans,
