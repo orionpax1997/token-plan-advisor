@@ -1,0 +1,9 @@
+{
+  "page": "Arena Privacy Policy 官方页面",
+  "url": "https://help.arena.ai/articles/3765052346-privacy-policy",
+  "key_facts": {
+    "data_source": "Agent Mode 真实用户会话",
+    "anonymization": "汇总、去标识化后用于评估与产品改进",
+    "real_user_data_risk": "真实用户任务、用户反馈、任务混合、模型版本漂移与隐私不可审计是主要偏差来源"
+  }
+}

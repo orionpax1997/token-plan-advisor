@@ -1,0 +1,22 @@
+{
+  "page": "Arena Agent Methodology 博客（官方 Agent Arena Methodology）",
+  "url": "https://arena.ai/blog/agent-arena-methodology",
+  "key_facts": {
+    "evaluation_target": "Agent orchestrator（决定何时、如何调用 bash、web search、文件读写等工具的主模型）",
+    "production_setting": "K=1（当前生产）",
+    "routing_method": "Agent Mode 通过随机分流将 session 分配给一个模型",
+    "session_definition": "一个 session 可包含多个 task、长时间多轮交互和上下文 carry-over",
+    "headline_signal_definition": "Net Improvement 是相对随机化平均 baseline 的 treatment effect，不是绝对成功率",
+    "headline_signal_aggregation": "总体值（Net Improvement）当前为五个信号的等权聚合",
+    "ci_method": "页面提供 95% 置信区间（计算公式未公开）",
+    "cost_token_definition": "成本和 token 是真实任务工作流的 P50 统计，不是 headline correctness 指标",
+    "no_fixed_inputs": [
+      "没有固定任务集",
+      "没有固定 prompt",
+      "没有重复次数/seed",
+      "没有统一公开的上下文窗口",
+      "没有公开完整的工具 schema/版本、采样参数、system prompt、逐任务结果或可本地重跑 harness"
+    ]
+  },
+  "scope_limits": "评测对象是 Agent orchestrator，不是单条 prompt 的语言模型打分；评测结果不能直接换算为模型在 Coding Plan 静态任务集上的能力"
+}

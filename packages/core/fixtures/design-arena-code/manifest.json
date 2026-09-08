@@ -1,0 +1,13 @@
+{
+  "captured_at": "2026-09-08T06:27:00.000Z",
+  "note": "Design Arena Code leaderboard（Overall Frontend (Text-to-HTML)，allcategories）官方接口与文档快照（2026-09-08 06:27 UTC 采集，事实基准 research/15-03）。API 文档允许商业使用（署名+链接）但 Terms 限制爬虫与商业用途，存在适用范围张力；本 fixture 为官方接口/方法页/About/system prompt/terms 的结构化快照（不含页面 HTML 全文）。刷新本 fixture 需人工访问或取得官方 API key（待办）。",
+  "sources": [
+    { "source_id": "design-arena-code-leaderboard", "file": "leaderboard.json", "url": "https://www.designarena.ai/leaderboard/code" },
+    { "source_id": "design-arena-code-registry", "file": "registry.json", "url": "https://www.designarena.ai/api/registry" },
+    { "source_id": "design-arena-code-methodology", "file": "methodology.json", "url": "https://notes.designarena.ai/methodology/" },
+    { "source_id": "design-arena-code-about", "file": "about.json", "url": "https://www.designarena.ai/about" },
+    { "source_id": "design-arena-code-system-prompts", "file": "system-prompts.json", "url": "https://www.designarena.ai/system-prompts" },
+    { "source_id": "design-arena-code-terms", "file": "terms.json", "url": "https://www.designarena.ai/terms-and-conditions" },
+    { "source_id": "design-arena-code-api-docs", "file": "api-docs.json", "url": "https://docs.designarena.ai/introduction" }
+  ]
+}

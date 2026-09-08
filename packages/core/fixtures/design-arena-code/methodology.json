@@ -1,0 +1,14 @@
+{
+  "page": "Design Arena Methodology Notes 官方页面",
+  "url": "https://notes.designarena.ai/methodology/",
+  "key_facts": {
+    "category_definition": "Overall Frontend = Website + UI Component + Game Development + Data Visualization + 3D Design 五类单文件 HTML 输出",
+    "voting_mechanism": "每个 pairwise vote 等权；Elo 是 Bradley-Terry strength 的近似",
+    "prompt_char_limit_declaration": "真实用户 prompt < 5,000 chars（方法页声明）",
+    "minimum_battles_methodology_page": 15,
+    "minimum_battles_about_page": "主图少于 50 过滤；约 200 次才较可靠",
+    "battle_threshold_conflict_note": "方法页与 About 页声明最小比较次数不同；本批如实记录差异",
+    "btStdErr_current": "allcategories 当前接口 btStdErr = null；不应自行制造精确误差范围"
+  },
+  "scope_limits": "Overall Frontend 不能与单独 Website/UI/Game 等类别直接等价；Elo 是随模型池、prompt 分布和采样策略变化的相对位置；历史快照不能直接比较；win rate 与 Elo 可能不同排序"
+}

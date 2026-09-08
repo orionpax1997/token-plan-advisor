@@ -98,6 +98,59 @@ describe.skipIf(!hasBuild)("tpa CLI 端到端（collect-benchmark，spawn dist/t
     }
   });
 
+  it("collect-benchmark arena-agent 输出通过 Benchmark Schema 校验的机读 JSON（reference_only / explanation）", async () => {
+    const result = await run(["collect-benchmark", "arena-agent"]);
+    if (result.code !== 0) {
+      throw new Error(`CLI exited ${result.code}: ${result.stderr}`);
+    }
+    const parsed = JSON.parse(result.stdout);
+    const validation = validateBenchmarkCollection(parsed);
+    expect(validation.ok).toBe(true);
+    if (validation.ok) {
+      expect(validation.value.collection.adapter_id).toBe("arena-agent");
+      // 所有记录 evidence_level=A / comparability_class=reference_only / allowed_use=explanation
+      for (const r of validation.value.records) {
+        expect(r.evidence_level).toBe("A");
+        expect(r.comparability_class).toBe("reference_only");
+        expect(r.allowed_use).toBe("explanation");
+      }
+      // baseline 漂移与无固定题集写入 revision
+      expect(validation.value.benchmark.leaderboard_or_dataset_revision).toContain("baseline_treatment_effect=true");
+      expect(validation.value.benchmark.leaderboard_or_dataset_revision).toContain("no_fixed_task_set=true");
+      // Net Improvement + 5 信号 + 资源 = 7 条记录/模型；10 个模型 = 70
+      expect(validation.value.records.length).toBe(70);
+    }
+  });
+
+  it("collect-benchmark design-arena-code 输出通过 Benchmark Schema 校验的机读 JSON（同快照 + 同类别）", async () => {
+    const result = await run(["collect-benchmark", "design-arena-code"]);
+    if (result.code !== 0) {
+      throw new Error(`CLI exited ${result.code}: ${result.stderr}`);
+    }
+    const parsed = JSON.parse(result.stdout);
+    const validation = validateBenchmarkCollection(parsed);
+    expect(validation.ok).toBe(true);
+    if (validation.ok) {
+      expect(validation.value.collection.adapter_id).toBe("design-arena-code");
+      // registry 总数 ≠ 榜单覆盖数 双口径同时保留
+      expect(validation.value.benchmark.leaderboard_or_dataset_revision).toContain("registry_total=496");
+      expect(validation.value.benchmark.leaderboard_or_dataset_revision).toContain("leaderboard_covered=164");
+      // active sampling + single_turn 进入 conditions
+      expect(validation.value.benchmark.leaderboard_or_dataset_revision).toContain("active_sampling=true");
+      // battles 门槛写入 revision
+      expect(validation.value.benchmark.leaderboard_or_dataset_revision).toContain("min_battles_methodology=15");
+      expect(validation.value.benchmark.leaderboard_or_dataset_revision).toContain("min_battles_about_main=50");
+      // 所有记录 evidence_level=A / comparability_class=reference_only / allowed_use=explanation
+      for (const r of validation.value.records) {
+        expect(r.evidence_level).toBe("A");
+        expect(r.comparability_class).toBe("reference_only");
+        expect(r.allowed_use).toBe("explanation");
+      }
+      // 10 模型 × 4 指标 = 40
+      expect(validation.value.records.length).toBe(40);
+    }
+  });
+
   it("未知 benchmark 来源 → 退出码 2，stderr 说明可用来源", async () => {
     const result = await run(["collect-benchmark", "nope"]);
     expect(result.code).toBe(2);
@@ -105,6 +158,8 @@ describe.skipIf(!hasBuild)("tpa CLI 端到端（collect-benchmark，spawn dist/t
     expect(result.stderr).toContain("terminal-bench");
     expect(result.stderr).toContain("zapier-automationbench");
     expect(result.stderr).toContain("artificial-analysis-intelligence");
+    expect(result.stderr).toContain("arena-agent");
+    expect(result.stderr).toContain("design-arena-code");
     expect(result.stdout).toBe("");
   });
 

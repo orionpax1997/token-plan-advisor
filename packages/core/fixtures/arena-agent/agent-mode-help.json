@@ -1,0 +1,21 @@
+{
+  "page": "Arena Agent Mode 帮助页（官方 how-to-use-agent-mode）",
+  "url": "https://help.arena.ai/articles/5432423882-how-to-use-agent-mode",
+  "key_facts": {
+    "task_kinds_observed": [
+      "software engineering",
+      "research",
+      "planning",
+      "documentation",
+      "web development",
+      "file analysis"
+    ],
+    "tool_access_in_agent_mode": [
+      "bash/sandbox",
+      "web search",
+      "file read/write",
+      "file upload"
+    ]
+  },
+  "scope_limits": "用户可使用上述工具；session 内可多 task、长交互、上下文 carry-over；不是固定题集"
+}

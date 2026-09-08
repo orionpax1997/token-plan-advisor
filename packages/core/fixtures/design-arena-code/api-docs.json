@@ -1,0 +1,15 @@
+{
+  "page": "Design Arena API Reference 官方文档",
+  "url": "https://docs.designarena.ai/introduction",
+  "key_facts": {
+    "endpoints": {
+      "leaderboard": "https://www.designarena.ai/api/leaderboard（POST，body 含 arenaType/category）",
+      "registry": "https://www.designarena.ai/api/registry"
+    },
+    "auth": "正式 API 需要 API key",
+    "rate_limits_published": false,
+    "attribution_requirement": "要求署名和链接（API 文档原文）",
+    "response_fields": ["modelId", "wins", "losses", "battles", "winRate", "elo", "btStdErr", "avgGenerationTimeMs"],
+    "use_scope_tension": "API 文档允许商业使用（署名+链接）+ Terms 限制爬虫与商业用途 = 适用范围张力"
+  }
+}

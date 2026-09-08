@@ -1,0 +1,10 @@
+{
+  "page": "Arena Agent Categories & Cost 博客",
+  "url": "https://arena.ai/blog/agent-categories-and-cost",
+  "key_facts": {
+    "category_definition": "Arena Agent 在 Overall 之外的细分任务域；当前页面 Overall 是混合任务分布，不解释为 coding-only 排名",
+    "cost_metric_definition": "成本与 token 是真实任务工作流的 P50 统计；不参与 headline correctness（Net Improvement）聚合",
+    "pricing_data_field": "页面公开模型 price_per_million_input / price_per_million_output USD 价格字段；与 p50_cost_per_task_usd 区分"
+  },
+  "scope_limits": "细分任务域结果不在本批快照导入范围；本批只导入 Overall 与五类信号 + 资源字段（参考类）"
+}

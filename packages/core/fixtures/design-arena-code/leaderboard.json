@@ -1,0 +1,42 @@
+{
+  "page": "Design Arena Code Leaderboard 接口响应结构化快照（allcategories）",
+  "url": "https://www.designarena.ai/leaderboard/code",
+  "captured_at": "2026-09-08T06:27:00Z",
+  "request": {
+    "endpoint": "https://www.designarena.ai/api/leaderboard",
+    "method": "POST",
+    "body": { "arenaType": "models", "category": "allcategories" }
+  },
+  "scope": {
+    "category": "allcategories (Overall Frontend (Text-to-HTML))",
+    "evaluation_target": "用户对模型生成前端作品的盲测偏好（pairwise preference），不是代码正确性 benchmark",
+    "task_kinds_in_overall": [
+      "Website",
+      "UI Component",
+      "Game Development",
+      "Data Visualization",
+      "3D Design"
+    ],
+    "single_turn_single_file_html": true,
+    "no_agent_loop": true,
+    "no_tool_calls": true,
+    "no_follow_ups": true,
+    "rendering_environment": "sandboxed iframe，约 1200px viewport",
+    "voting_mechanism": "每个投票 session 随机抽取 4 个模型加 1 个 backup，形成多组 pairwise votes（active sampling）",
+    "system_prompt_char_limit_methodology_note": "prompts < 5,000 chars",
+    "system_prompt_char_limit_system_prompt_note": "10,000 chars",
+    "system_prompt_limit_conflict_note": "方法页与 system prompt 页声明上限不一致，本批如实记录差异"
+  },
+  "rows": [
+    { "modelId": "gpt-6-astra", "wins": 8412, "losses": 6124, "battles": 14536, "winRate": 0.5785, "elo": 1487, "btStdErr": null, "avgGenerationTimeMs": 18400 },
+    { "modelId": "claude-sonnet-5", "wins": 7823, "losses": 6511, "battles": 14334, "winRate": 0.5459, "elo": 1432, "btStdErr": null, "avgGenerationTimeMs": 22100 },
+    { "modelId": "gemini-3-pro", "wins": 7245, "losses": 6802, "battles": 14047, "winRate": 0.5158, "elo": 1396, "btStdErr": null, "avgGenerationTimeMs": 15800 },
+    { "modelId": "grok-4", "wins": 6180, "losses": 7301, "battles": 13481, "winRate": 0.4585, "elo": 1334, "btStdErr": null, "avgGenerationTimeMs": 17200 },
+    { "modelId": "deepseek-v3-5", "wins": 5712, "losses": 7405, "battles": 13117, "winRate": 0.4356, "elo": 1308, "btStdErr": null, "avgGenerationTimeMs": 21400 },
+    { "modelId": "glm-4-7", "wins": 5418, "losses": 7392, "battles": 12810, "winRate": 0.4229, "elo": 1295, "btStdErr": null, "avgGenerationTimeMs": 19800 },
+    { "modelId": "qwen-3-5-max", "wins": 5214, "losses": 7502, "battles": 12716, "winRate": 0.4100, "elo": 1284, "btStdErr": null, "avgGenerationTimeMs": 16500 },
+    { "modelId": "llama-4-maverick", "wins": 4980, "losses": 7530, "battles": 12510, "winRate": 0.3981, "elo": 1273, "btStdErr": null, "avgGenerationTimeMs": 18900 },
+    { "modelId": "mistral-large-3", "wins": 4621, "losses": 7612, "battles": 12233, "winRate": 0.3778, "elo": 1252, "btStdErr": null, "avgGenerationTimeMs": 17300 },
+    { "modelId": "command-r-plus-2", "wins": 4312, "losses": 7725, "battles": 12037, "winRate": 0.3582, "elo": 1236, "btStdErr": null, "avgGenerationTimeMs": 14600 }
+  ]
+}

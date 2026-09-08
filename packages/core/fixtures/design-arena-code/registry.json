@@ -1,0 +1,8 @@
+{
+  "page": "Design Arena Registry 接口响应（官方 registry 总数）",
+  "url": "https://www.designarena.ai/api/registry",
+  "captured_at": "2026-09-08T06:27:00Z",
+  "registry_total_models": 496,
+  "leaderboard_total_models_with_scores": 164,
+  "registry_vs_leaderboard_note": "官方 registry 当前返回 496 个模型；leaderboard 接口 allcategories 当前返回 164 个有分数的模型；不能把 registry 总数（496）当榜单覆盖数（164）"
+}

@@ -11,6 +11,8 @@ import { createDeepSweAdapter } from "./adapters/deepswe/adapter.ts";
 import { createTerminalBenchAdapter } from "./adapters/terminal-bench/adapter.ts";
 import { createZapierAutomationBenchAdapter } from "./adapters/zapier-automationbench/adapter.ts";
 import { createArtificialAnalysisIntelligenceAdapter } from "./adapters/artificial-analysis-intelligence/adapter.ts";
+import { createArenaAgentAdapter } from "./adapters/arena-agent/adapter.ts";
+import { createDesignArenaCodeAdapter } from "./adapters/design-arena-code/adapter.ts";
 import type { DataProvider } from "./providers/types.ts";
 import type { BenchmarkAdapter } from "./adapters/types.ts";
 import { validatePlanCollection, type PlanCollection } from "./schema/plan.ts";
@@ -76,6 +78,8 @@ const BENCHMARK_ADAPTER_FACTORIES: Record<string, () => BenchmarkAdapter> = {
   "terminal-bench": createTerminalBenchAdapter,
   "zapier-automationbench": createZapierAutomationBenchAdapter,
   "artificial-analysis-intelligence": createArtificialAnalysisIntelligenceAdapter,
+  "arena-agent": createArenaAgentAdapter,
+  "design-arena-code": createDesignArenaCodeAdapter,
 };
 
 const USAGE = `Usage: tpa <command> [args]

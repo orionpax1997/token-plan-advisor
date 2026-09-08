@@ -1,0 +1,13 @@
+{
+  "page": "Design Arena About 官方页面",
+  "url": "https://www.designarena.ai/about",
+  "key_facts": {
+    "evaluation_target": "用户对模型生成前端作品的盲测偏好（pairwise preference）",
+    "voting_session_composition": "每个 session 随机抽取 4 个模型加 1 个 backup",
+    "active_sampling": "active sampling 使模型曝光和对手结构不必均匀",
+    "min_battles_for_main_chart": 50,
+    "min_battles_for_reliability": 200,
+    "supported_libraries": "允许部分 CDN/library；不在 sandbox 中预装 npm 包",
+    "rendering_viewport": "约 1200px viewport"
+  }
+}

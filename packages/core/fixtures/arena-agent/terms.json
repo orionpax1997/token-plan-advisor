@@ -1,0 +1,13 @@
+{
+  "page": "Arena Terms of Use 官方页面",
+  "url": "https://help.arena.ai/articles/5629909088-terms-of-use",
+  "rights_holder": "Arena Intelligence, Inc. d/b/a Arena",
+  "license_grant": "可撤销、非商业个人使用许可；未经许可不得系统性使用聚合数据",
+  "prohibitions": [
+    "禁止程序化或自动化抓取、提取或下载网页数据（条款原文）",
+    "禁止商业使用聚合数据；未发现 Agent leaderboard 聚合数据的独立开放许可证",
+    "禁止把数据再发布到第三方系统、爬虫或商业产品"
+  ],
+  "data_origin": "Agent Mode 真实用户工作流（隐私政策：可能来自真实用户内容，被汇总/去标识化/用于评估与产品改进）",
+  "robots_txt": "https://arena.ai/robots.txt（明确禁止自动化抓取）"
+}

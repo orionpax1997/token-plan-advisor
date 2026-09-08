@@ -1,0 +1,13 @@
+{
+  "page": "Design Arena Terms and Conditions 官方页面",
+  "url": "https://www.designarena.ai/terms-and-conditions",
+  "rights_holder": "Arcada Labs Incorporated（Design Arena）",
+  "data_license_terms": "API 文档称可用于个人和商业项目，但要求署名和链接；Terms 又限制爬虫、复制和商业用途",
+  "prohibitions": [
+    "禁止爬虫抓取页面内容",
+    "禁止复制页面内容用于商业用途",
+    "禁止把匿名接口批量抓取作为生产数据源"
+  ],
+  "no_warranty": "官方 Terms 声明不保证数据完整、及时或可靠",
+  "use_recommendation": "生产使用应采用获批 API 并先确认许可，不依赖匿名接口批量抓取"
+}
