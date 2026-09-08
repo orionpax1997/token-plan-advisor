@@ -39,6 +39,14 @@ export interface FixtureManifest {
   sources: { source_id: string; file: string; url: string }[];
 }
 
+/** 来自 manifest 的来源原始体（manifest 装载后、尚未组装快照特有字段）。 */
+export interface FixtureSourceBody<K extends string> {
+  source_id: string;
+  url: string;
+  kind: K;
+  body: string;
+}
+
 /** 从模块位置向上找最近的 package.json（src/ 与 dist/ 下都成立）。 */
 export function resolvePackageRoot(fromUrl: string): string {
   let filePath = decodeURIComponent(new URL(fromUrl).pathname);
@@ -54,6 +62,43 @@ export function resolvePackageRoot(fromUrl: string): string {
 
 export async function loadFixtureManifest(fixtureDir: string): Promise<FixtureManifest> {
   return JSON.parse(await readFile(join(fixtureDir, "manifest.json"), "utf8")) as FixtureManifest;
+}
+
+/**
+ * fixture 装载核心（manifest 查条目 → 读文件 → 缺失抛错）。
+ * 两家族（providers / adapters）共用此核心；返回来源原始体 + manifest captured_at，
+ * 两侧各自再 map 成自己的快照类型并 push 特有字段（providers: fetched_at/http_status/
+ * failure_code；adapters: captured_at——push 字段差异是语义差异，不做整函数合一）。
+ * 错误文案（`fixture manifest 缺少来源 …` / `fixture 快照缺失：…`）随实现合一自然归一。
+ *
+ * 契约：`bodies` 与 `sources` 严格同序（按 sources 迭代序 push；缺件即抛，不会
+ * 跳过或重排）——调用方可按下标配对回取 sources 特有字段，勿改为按 manifest 序或并发化。
+ */
+export async function loadFixtureSourceBodies<K extends string>(
+  fixtureDir: string,
+  sources: ReadonlyArray<{ source_id: string; url: string; kind: K }>,
+): Promise<{ captured_at: string; bodies: FixtureSourceBody<K>[] }> {
+  const manifest = await loadFixtureManifest(fixtureDir);
+  const bodies: FixtureSourceBody<K>[] = [];
+  for (const source of sources) {
+    const entry = manifest.sources.find((s) => s.source_id === source.source_id);
+    if (!entry) {
+      throw new Error(`fixture manifest 缺少来源 ${source.source_id}`);
+    }
+    let body: string;
+    try {
+      body = await readFile(join(fixtureDir, entry.file), "utf8");
+    } catch (error) {
+      throw new Error(`fixture 快照缺失：${entry.file}`, { cause: error });
+    }
+    bodies.push({
+      source_id: source.source_id,
+      url: source.url,
+      kind: source.kind,
+      body,
+    });
+  }
+  return { captured_at: manifest.captured_at, bodies };
 }
 
 /** 从模块位置读取包版本（CLI 与全部 Provider/Adapter 共用；ESM 实现，勿用 require）。 */
@@ -134,31 +179,21 @@ export async function loadSnapshots(
     return snapshots;
   }
 
-  // fixture 模式
-  const manifest = await loadFixtureManifest(fixtureDir);
-  const snapshots: RawSnapshot[] = [];
-  for (const source of sources) {
-    const entry = manifest.sources.find((s) => s.source_id === source.source_id);
-    if (!entry) {
-      throw new Error(`fixture manifest 缺少来源 ${source.source_id}`);
-    }
-    let body: string;
-    try {
-      body = await readFile(join(fixtureDir, entry.file), "utf8");
-    } catch (error) {
-      throw new Error(`fixture 快照缺失：${entry.file}`, { cause: error });
-    }
-    snapshots.push({
-      source_id: source.source_id,
-      url: source.url,
-      kind: source.kind,
-      body,
-      fetched_at: manifest.captured_at,
+  // fixture 模式：装载核心共享（manifest 查条目/读文件/缺失抛错），再 map 为 RawSnapshot
+  // 并 push 家族特有字段（fetched_at/http_status/failure_code）。bodies 与 sources 同序，
+  // 可按下标取回 source.ok_code（manifest 缺失已在装载核心抛错，不会改变顺序）。
+  const { captured_at, bodies } = await loadFixtureSourceBodies(fixtureDir, sources);
+  return bodies.map(
+    (b, i): RawSnapshot => ({
+      source_id: b.source_id,
+      url: b.url,
+      kind: b.kind,
+      body: b.body,
+      fetched_at: captured_at,
       http_status: 200,
-      failure_code: source.ok_code,
-    });
-  }
-  return snapshots;
+      failure_code: sources[i]!.ok_code,
+    }),
+  );
 }
 
 // ---------------------------------------------------------------------------

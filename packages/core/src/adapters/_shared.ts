@@ -1,7 +1,5 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import type { BenchmarkSourceKind } from "../schema/benchmark.ts";
-import type { FixtureManifest } from "../providers/_shared.ts";
+import { loadFixtureSourceBodies } from "../providers/_shared.ts";
 
 /**
  * Benchmark Adapter 家族共用的快照装载。
@@ -29,11 +27,8 @@ export interface BenchmarkSnapshot {
   captured_at: string;
 }
 
-export function loadFixtureManifest(fixtureDir: string): Promise<FixtureManifest> {
-  return readFile(join(fixtureDir, "manifest.json"), "utf8").then(
-    (body) => JSON.parse(body) as FixtureManifest,
-  );
-}
+// manifest 装载与 fixture 装载核心（查条目 → 读文件 → 缺失抛错）复用
+// providers/_shared.ts 的单一实现（loadFixtureManifest / loadFixtureSourceBodies）。
 
 /**
  * 装载全部来源快照（fixture）。manifest 或快照文件缺失即抛错——
@@ -43,26 +38,14 @@ export async function loadBenchmarkSnapshots(
   fixtureDir: string,
   sources: BenchmarkSourceSpec[],
 ): Promise<BenchmarkSnapshot[]> {
-  const manifest = await loadFixtureManifest(fixtureDir);
-  const snapshots: BenchmarkSnapshot[] = [];
-  for (const source of sources) {
-    const entry = manifest.sources.find((s) => s.source_id === source.source_id);
-    if (!entry) {
-      throw new Error(`fixture manifest 缺少来源 ${source.source_id}`);
-    }
-    let body: string;
-    try {
-      body = await readFile(join(fixtureDir, entry.file), "utf8");
-    } catch (error) {
-      throw new Error(`fixture 快照缺失：${entry.file}`, { cause: error });
-    }
-    snapshots.push({
-      source_id: source.source_id,
-      url: source.url,
-      kind: source.kind,
-      body,
-      captured_at: manifest.captured_at,
-    });
-  }
-  return snapshots;
+  const { captured_at, bodies } = await loadFixtureSourceBodies(fixtureDir, sources);
+  return bodies.map(
+    (b): BenchmarkSnapshot => ({
+      source_id: b.source_id,
+      url: b.url,
+      kind: b.kind,
+      body: b.body,
+      captured_at,
+    }),
+  );
 }
