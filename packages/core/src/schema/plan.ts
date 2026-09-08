@@ -81,8 +81,10 @@ const statusesRequiringNullValue: ReadonlySet<QualityStatus> = new Set(["unobtai
  * 字段级可追溯值包装：value + 质量状态 + 官方原文（raw）+ 来源。
  * 未知（value=null + unobtainable）、零值（value=0 + verified）与
  * 不适用（value=null + not_applicable）由此在结构上可区分。
+ *
+ * 导出供 benchmark schema 复用同一套质量状态约定（ticket：字段级质量状态沿用核心包既有约定）。
  */
-function field<T extends z.ZodType>(value: T) {
+export function field<T extends z.ZodType>(value: T) {
   return z
     .strictObject({
       value: value.nullable(),
@@ -405,7 +407,8 @@ const SourceRef = z.strictObject({
 });
 export type SourceRef = z.output<typeof SourceRef>;
 
-const UnresolvedFact = z.strictObject({
+/** 未能核验事实的结构化记录；导出供 benchmark schema 复用同一结构。 */
+export const UnresolvedFact = z.strictObject({
   fact: z.string(),
   reason: z.string(),
   failure_code: FailureCode.optional(),

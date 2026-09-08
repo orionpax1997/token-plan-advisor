@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import type { FailureCode, SourceChainRef, SourceKind } from "../schema/plan.ts";
@@ -54,6 +54,14 @@ export function resolvePackageRoot(fromUrl: string): string {
 
 export async function loadFixtureManifest(fixtureDir: string): Promise<FixtureManifest> {
   return JSON.parse(await readFile(join(fixtureDir, "manifest.json"), "utf8")) as FixtureManifest;
+}
+
+/** 从模块位置读取包版本（CLI 与全部 Provider/Adapter 共用；ESM 实现，勿用 require）。 */
+export function readToolVersion(fromUrl: string): string {
+  const pkg = JSON.parse(readFileSync(join(resolvePackageRoot(fromUrl), "package.json"), "utf8")) as {
+    version?: string;
+  };
+  return pkg.version ?? "0.0.0";
 }
 
 /**

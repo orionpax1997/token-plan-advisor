@@ -1,15 +1,9 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { attachRankingGate } from "../../schema/gate.ts";
+import { readToolVersion } from "../_shared.ts";
 import type { DataProvider } from "../types.ts";
 import { loadSnapshots, resolvePackageRoot } from "./load.ts";
 import { normalizeFromSnapshots } from "./normalize.ts";
-
-function readToolVersion(): string {
-  const root = resolvePackageRoot(import.meta.url);
-  const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { version?: string };
-  return pkg.version ?? "0.0.0";
-}
 
 /**
  * z.ai GLM Coding Plan（国际区，新加坡主体）的 Data Provider。
@@ -18,7 +12,7 @@ function readToolVersion(): string {
 export function createZaiProvider(): DataProvider {
   const packageRoot = resolvePackageRoot(import.meta.url);
   const fixtureDir = join(packageRoot, "fixtures", "zai");
-  const toolVersion = readToolVersion();
+  const toolVersion = readToolVersion(import.meta.url);
 
   return {
     providerId: "zai-glm-coding-plan",

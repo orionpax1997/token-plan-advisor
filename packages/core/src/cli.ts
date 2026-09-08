@@ -1,4 +1,5 @@
 import { createZaiProvider } from "./providers/zai/provider.ts";
+import { readToolVersion } from "./providers/_shared.ts";
 import { createCodeBuddyCnProvider } from "./providers/codebuddy/cn/provider.ts";
 import { createCodeBuddyIntlProvider } from "./providers/codebuddy/intl/provider.ts";
 import { createCursorProvider } from "./providers/cursor/global/provider.ts";
@@ -6,8 +7,11 @@ import { createCursorStartInProvider } from "./providers/cursor/start/provider.t
 import { createTraeIntlProvider } from "./providers/trae/intl/provider.ts";
 import { createTraeCnProvider } from "./providers/trae/cn/provider.ts";
 import { createGeminiCodeAssistProvider } from "./providers/gemini/provider.ts";
+import { createDeepSweAdapter } from "./adapters/deepswe/adapter.ts";
 import type { DataProvider } from "./providers/types.ts";
+import type { BenchmarkAdapter } from "./adapters/types.ts";
 import { validatePlanCollection, type PlanCollection } from "./schema/plan.ts";
+import { validateBenchmarkCollection } from "./schema/benchmark.ts";
 
 /**
  * 全部已接入的 Data Provider 注册表。
@@ -59,24 +63,40 @@ const COVERAGE_GAPS: { name: string; reason: string }[] = [
   },
 ];
 
+/**
+ * 全部已接入的 Benchmark Adapter 注册表。
+ * benchmark 采集以官方已发布快照为输入（fixture），不实现自动抓取
+ * （benchmark-collection spec §Out of Scope）。
+ */
+const BENCHMARK_ADAPTER_FACTORIES: Record<string, () => BenchmarkAdapter> = {
+  deepswe: createDeepSweAdapter,
+};
+
 const USAGE = `Usage: tpa <command> [args]
 
 Commands:
   collect <provider>   采集指定 Vendor 的 Coding Plan 事实并输出机读 JSON
   collect-all          一次性输出全部已接入 coding-subscription 候选 + 覆盖缺口声明
+  collect-benchmark <source>
+                       采集指定 benchmark 官方快照并输出机读 JSON（Benchmark Record Schema v1）
 
 Options:
-  --mode <mode>        fixture（默认，使用随包快照）或 live（实时抓取官方来源）
+  --mode <mode>        collect/collect-all：fixture（默认，使用随包快照）或 live（实时抓取官方来源）
+                       collect-benchmark 仅支持官方快照输入，不提供 --mode
   --pretty             缩进输出（默认单行紧凑 JSON）
 
-Providers:
+Plan Providers:
   ${Object.keys(PROVIDER_FACTORIES).join(", ")}
+
+Benchmark Sources:
+  ${Object.keys(BENCHMARK_ADAPTER_FACTORIES).join(", ")}
 
 Examples:
   tpa collect zai
   tpa collect zai --mode live --pretty
   tpa collect-all
   tpa collect-all --pretty
+  tpa collect-benchmark deepswe --pretty
 `;
 
 export interface CliIo {
@@ -121,31 +141,9 @@ async function collectOne(
 }
 
 /**
- * CLI 入口：argv → 退出码。输出一律先经 Plan Schema v1 校验闸，
+ * CLI 入口：argv → 退出码。输出一律先经 Schema 校验闸（Plan 或 Benchmark），
  * 保证 stdout 上的机读 JSON 契约可信；错误写 stderr，不污染 stdout。
  */
-function readToolVersion(): string {
-  // 直接读 package.json，不走完整的 provider 采集路径（后者会重复抓取全部来源）
-  const { readFileSync } = require("node:fs") as typeof import("node:fs");
-  const { join, dirname } = require("node:path") as typeof import("node:path");
-  const { fileURLToPath } = require("node:url") as typeof import("node:url");
-  const here = dirname(fileURLToPath(import.meta.url));
-  // dist/cli.js → ../../../package.json (从 dist 向上找 package.json)
-  let dir = here;
-  for (let i = 0; i < 6; i++) {
-    try {
-      const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { version?: string };
-      if (typeof pkg.version === "string") return pkg.version;
-    } catch {
-      // continue
-    }
-    const parent = dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return "0.0.0";
-}
-
 export async function runCli(argv: string[], io: CliIo): Promise<number> {
   const [command = null, ...rest] = argv;
   if (command === null || command === "help" || command === "--help") {
@@ -157,6 +155,10 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
     return runCollectAll(rest, io);
   }
 
+  if (command === "collect-benchmark") {
+    return runCollectBenchmark(rest, io);
+  }
+
   if (command !== "collect") {
     io.stderr(`Unknown command: ${command}\n\n${USAGE}`);
     return 2;
@@ -164,34 +166,55 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
   return runCollect(rest, io);
 }
 
-async function runCollect(rest: string[], io: CliIo): Promise<number> {
-  let providerId: string | undefined;
+type ParsedCollectArgs =
+  | { kind: "ok"; mode: "fixture" | "live"; pretty: boolean; positional: string[] }
+  | { kind: "help" }
+  | { kind: "error" }; // 错误信息已写 stderr
+
+/**
+ * collect / collect-all / collect-benchmark 共用的选项解析。
+ * allowMode=false 时 --mode 走 Unknown option 分支
+ * （benchmark 快照采集无 live 模式，本批以官方已发布快照为唯一输入）。
+ */
+function parseCollectArgs(
+  rest: string[],
+  io: CliIo,
+  options: { allowMode: boolean; maxPositionals: number },
+): ParsedCollectArgs {
   let mode: "fixture" | "live" = "fixture";
   let pretty = false;
+  const positional: string[] = [];
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i];
-    if (arg === "--mode") {
+    if (options.allowMode && arg === "--mode") {
       const value = rest[++i];
       if (value !== "fixture" && value !== "live") {
         io.stderr(`--mode must be "fixture" or "live", got: ${value}\n\n${USAGE}`);
-        return 2;
+        return { kind: "error" };
       }
       mode = value;
     } else if (arg === "--pretty") {
       pretty = true;
     } else if (arg === "--help") {
       io.stderr(USAGE);
-      return 0;
+      return { kind: "help" };
     } else if (arg?.startsWith("--")) {
       io.stderr(`Unknown option: ${arg}\n\n${USAGE}`);
-      return 2;
-    } else if (providerId === undefined) {
-      providerId = arg;
+      return { kind: "error" };
+    } else if (arg !== undefined && positional.length < options.maxPositionals) {
+      positional.push(arg);
     } else {
       io.stderr(`Unexpected argument: ${arg}\n\n${USAGE}`);
-      return 2;
+      return { kind: "error" };
     }
   }
+  return { kind: "ok", mode, pretty, positional };
+}
+
+async function runCollect(rest: string[], io: CliIo): Promise<number> {
+  const parsed = parseCollectArgs(rest, io, { allowMode: true, maxPositionals: 1 });
+  if (parsed.kind !== "ok") return parsed.kind === "help" ? 0 : 2;
+  const providerId = parsed.positional[0];
   if (!providerId) {
     io.stderr(`Missing provider.\n\n${USAGE}`);
     return 2;
@@ -203,10 +226,50 @@ async function runCollect(rest: string[], io: CliIo): Promise<number> {
     );
     return 2;
   }
-  const result = await collectOne(providerId, mode, io);
+  const result = await collectOne(providerId, parsed.mode, io);
   if (!result) return 1;
-  writeJson(io, result, pretty);
+  writeJson(io, result, parsed.pretty);
   return 0;
+}
+
+/**
+ * collect-benchmark 命令：采集指定 benchmark 官方快照并输出机读 JSON。
+ * 本批以官方已发布 revision 的快照为唯一输入（无 --mode）：
+ * benchmark "最新" 指最新已发布的 leaderboard/dataset revision，
+ * 实时抓取动态榜单反而破坏可比性（探索 02 实现约束）。
+ */
+async function runCollectBenchmark(rest: string[], io: CliIo): Promise<number> {
+  const parsed = parseCollectArgs(rest, io, { allowMode: false, maxPositionals: 1 });
+  if (parsed.kind !== "ok") return parsed.kind === "help" ? 0 : 2;
+  const sourceId = parsed.positional[0];
+  if (!sourceId) {
+    io.stderr(`Missing benchmark source.\n\n${USAGE}`);
+    return 2;
+  }
+  const factory = BENCHMARK_ADAPTER_FACTORIES[sourceId];
+  if (!factory) {
+    io.stderr(
+      `Unknown benchmark source: ${sourceId}. Available sources: ${Object.keys(BENCHMARK_ADAPTER_FACTORIES).join(", ")}\n`,
+    );
+    return 2;
+  }
+  try {
+    const collected = await factory().collect({});
+    const validation = validateBenchmarkCollection(collected);
+    if (!validation.ok) {
+      io.stderr(
+        `internal error: ${sourceId} collected data failed Benchmark Schema v1 validation:\n${validation.issues.join("\n")}\n`,
+      );
+      return 1;
+    }
+    writeJson(io, validation.value, parsed.pretty);
+    return 0;
+  } catch (error) {
+    io.stderr(
+      `collect-benchmark ${sourceId} failed: ${error instanceof Error ? error.message : String(error)}\n`,
+    );
+    return 1;
+  }
 }
 
 /**
@@ -228,39 +291,17 @@ async function runCollect(rest: string[], io: CliIo): Promise<number> {
  * 不宣称市场完整——coverage_gaps 字段如实声明尚未接入的来源。
  */
 async function runCollectAll(rest: string[], io: CliIo): Promise<number> {
-  let mode: "fixture" | "live" = "fixture";
-  let pretty = false;
-  for (let i = 0; i < rest.length; i++) {
-    const arg = rest[i];
-    if (arg === "--mode") {
-      const value = rest[++i];
-      if (value !== "fixture" && value !== "live") {
-        io.stderr(`--mode must be "fixture" or "live", got: ${value}\n\n${USAGE}`);
-        return 2;
-      }
-      mode = value;
-    } else if (arg === "--pretty") {
-      pretty = true;
-    } else if (arg === "--help") {
-      io.stderr(USAGE);
-      return 0;
-    } else if (arg?.startsWith("--")) {
-      io.stderr(`Unknown option: ${arg}\n\n${USAGE}`);
-      return 2;
-    } else {
-      io.stderr(`Unexpected argument: ${arg}\n\n${USAGE}`);
-      return 2;
-    }
-  }
+  const parsed = parseCollectArgs(rest, io, { allowMode: true, maxPositionals: 0 });
+  if (parsed.kind !== "ok") return parsed.kind === "help" ? 0 : 2;
 
   // 读取工具版本（任一 provider 都共享同一包版本）：直接读 package.json
-  const toolVersion = readToolVersion();
+  const toolVersion = readToolVersion(import.meta.url);
 
   const collections: Record<string, PlanCollection> = {};
   const errors: { provider_id: string; error: string }[] = [];
 
   for (const providerId of CODING_SUBSCRIPTION_PROVIDERS) {
-    const result = await collectOne(providerId, mode, io);
+    const result = await collectOne(providerId, parsed.mode, io);
     if (result) {
       collections[providerId] = result;
     } else {
@@ -273,7 +314,7 @@ async function runCollectAll(rest: string[], io: CliIo): Promise<number> {
     schema_version: "1",
     collected_at: collectedAt,
     tool_version: toolVersion,
-    mode,
+    mode: parsed.mode,
     coverage_scope: {
       plan_type: "coding-subscription",
       count: CODING_SUBSCRIPTION_PROVIDERS.length,
@@ -284,7 +325,7 @@ async function runCollectAll(rest: string[], io: CliIo): Promise<number> {
     collections,
   };
 
-  writeJson(io, summary, pretty);
+  writeJson(io, summary, parsed.pretty);
 
   // 部分失败时仍以 0 退出（输出包含错误明细），全部失败时退出 1
   if (errors.length === CODING_SUBSCRIPTION_PROVIDERS.length) {

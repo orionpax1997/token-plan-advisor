@@ -1,9 +1,9 @@
 # @token-plan-advisor/core
 
-Coding Plan 信息采集的确定性核心包：**Plan Schema v1**、**Data Provider** 契约与 **tpa CLI**。
+Coding Plan 信息采集的确定性核心包：**Plan Schema v1**、**Data Provider** 契约、**Benchmark Record Schema v1**、**Benchmark Adapter** 契约与 **tpa CLI**。
 架构遵循 [ADR-0001](../../docs/adr/0001-monorepo-core-package-plus-thin-skill.md)——采集与归一化全部在本包的确定性管道内完成，不依赖 LLM；后续 Agent Skill 只经 CLI 调用本包。
 
-领域词汇见仓库根 [CONTEXT.md](../../CONTEXT.md)（Vendor / Plan / Plan Type / Regional Variant / Data Provider / Availability / Official Source / Unresolved Fact）。
+领域词汇见仓库根 [CONTEXT.md](../../CONTEXT.md)（Vendor / Plan / Plan Type / Regional Variant / Data Provider / Benchmark Adapter / Evidence Level / Comparability Class / Availability / Official Source / Unresolved Fact）。
 
 ## 安装与构建
 
@@ -28,6 +28,33 @@ tpa collect-all --pretty
 ```
 
 已接入 Provider（8 个 Regional Variant，覆盖 7 项 coding-subscription 候选）：`zai`、`codebuddy-cn`、`codebuddy-intl`、`cursor`、`cursor-start-in`、`trae-intl`、`trae-cn`、`gemini-codeassist`。
+
+### Benchmark 采集（collect-benchmark）
+
+```bash
+tpa collect-benchmark deepswe            # DeepSWE v1.1 官方快照导入（无 --mode：本批只有官方快照一种输入）
+tpa collect-benchmark deepswe --pretty
+```
+
+已接入 Benchmark Adapter：`deepswe`（Datacurve DeepSWE v1.1，70 个 leaderboard 配置 × 3 条记录：pass@1 / pass@4 / 资源聚合）。
+
+输出为**机读 JSON**（Benchmark Record Schema v1，`schema_version: "1"`）：
+
+- **9 类标准化能力标签**注册表（`repository_task_completion` 等，见 `src/schema/benchmark.ts` 的 `CapabilityTags`）；
+- **证据等级 A/B/C** 与 **可比性四级分级**（`direct_same_config / source_internal_normalized / reference_only / not_comparable`）进入 Schema 并与 `allowed_use`（`scoring | explanation | exclude`）强制约束：C 只能 exclude、B 不得 scoring、资源信号（`benchmark_resource_usage`）只能 explanation、完全不可比必须 exclude；
+- **`normalized_metric` 只能落在同一 benchmark release 的指标空间内**（`metric_space = <benchmark_id>:<version>:<metric>`，校验闸拒绝跨来源/跨版本统一分）；
+- **禁止推断清单**逐条机读（`prohibited_inferences`）：不把 Pass@1/Pass@4 当 Plan 用户成功率、不把 cost/token/steps/duration 与 Plan 价格额度混算、不把 harness 结果当裸模型结果等；
+- **不确定即显式 null**：模型 API ID、Vendor、上下文窗口、cost_basis 等官方未给出的字段保持 `null + unobtainable`（沿用 Plan Schema 的字段级质量状态约定），不猜测、不以展示名或结果反推；
+- 三时间戳（采集 / 发布 / 快照）沿用核心包约定。
+
+程序化调用：
+
+```ts
+import { createDeepSweAdapter, validateBenchmarkCollection } from "@token-plan-advisor/core";
+
+const doc = await createDeepSweAdapter().collect({ now: () => new Date() });
+const result = validateBenchmarkCollection(doc); // { ok: true, value } | { ok: false, issues }
+```
 
 输出为**机读 JSON**（Plan Schema v1，`schema_version: "1"`），stdout 只承载该文档；错误与用法写 stderr。
 输出必须通过 Schema 校验闸才会发出，包含：字段级质量状态、Unresolved Facts、采集时间戳、所用来源与回退链尝试记录。
@@ -71,6 +98,13 @@ const result = validatePlanCollection(doc); // { ok: true, value } | { ok: false
 3. 在 `normalize.ts` 调用 `deriveSourceChains(snapshots, chains)` 派生 `source_chains` 字段；provider 出口用 `attachRankingGate(...)` 包装 normalize 结果（门控标记从文档内容自动派生，无需手填）。
 4. 抓取官方快照存入 `fixtures/<vendor>/` 并写 `manifest.json`（`captured_at` + 来源清单，见下节）；fixture 与 live 共用同一条归一化路径。
 5. 在 `src/cli.ts` 的 `PROVIDER_FACTORIES` 注册，并经 CLI seam 补端到端测试；若新 Provider 触发门控结论变化，同步更新 `test/ranking-gate.test.ts` 的 CLI 断言。
+
+## 新增 Benchmark Adapter
+
+1. 在 `src/adapters/<source>/` 建 `sources.ts`（官方 artifact 注册表，kind 为 `leaderboard_artifact / release_manifest / task_set_artifact / official_docs / official_license`）。
+2. 实现 `parse.ts`（官方 artifact 的纯解析层，只做形状守卫与逐字段透传）与 `normalize.ts`（组装 `BenchmarkCollection`；能力标签只能从 9 类注册表中选；不确定的字段显式 null，不猜测）。
+3. 抓取官方快照存入 `fixtures/<source>/` 并写 `manifest.json`；本批 benchmark 采集只有 fixture 一种输入（动态榜单实时抓取明确 out of scope）。
+4. 在 `src/cli.ts` 的 `BENCHMARK_ADAPTER_FACTORIES` 注册，并经 CLI seam 补端到端测试。
 
 ## fixture 快照管理流程
 

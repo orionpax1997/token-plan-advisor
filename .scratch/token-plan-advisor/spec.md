@@ -141,3 +141,4 @@ Skill 面向个人开发者，覆盖全球及中国市场。它应明确区分 `
 
 - 已确认仓库布局与分发形态，见 `docs/adr/0001-monorepo-core-package-plus-thin-skill.md`：确定性核心为独立 npm 包，Skill 薄壳只做调用与渲染，CLI 优先、MCP 推迟。实现 tickets 拆分推迟到探索 ticket 01、02 结论落地后进行。
 - 探索 01 已完成（见其 `## Answer`）。第一批实现 tickets 已建立于 `.scratch/core-coding-plan-collection/`（01–05，仅核心包 + coding-subscription 采集）；探索 02 仍开放，`recommend`/分析类契约与其后批次继续等待其结论。
+- 探索 02 已完成（见其 `## Answer`，单来源事实在 `research/15-*`）。第二批实现 tickets 已建立于 `.scratch/benchmark-collection/`（01–05，6 来源 benchmark 快照采集）；模型→Plan 映射与 Recommendation Policy 等待两批采集落地后另立批次。

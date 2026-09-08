@@ -20,6 +20,10 @@
 
 **Benchmark Adapter**：将特定 benchmark 或测评结果转换为标准化指标的适配器。
 
+**Evidence Level**：benchmark 记录的可核验程度分级（A/B/C），决定该记录可进入评分、仅作解释或必须排除。
+
+**Comparability Class**：判定两条 benchmark 结果可比较程度的分级：同源同版本同配置可直接比较、来源内归一化、仅作参考、完全不可比较；不同来源的原始分数不放进同一数值尺度。
+
 **Recommendation Policy**：定义硬性约束、动态权重、评分和排序规则的策略。
 
 **Recommendation**：基于某一时刻的数据和用户当前会话条件生成的分析结果，不是对未来价格、额度或可用性的承诺。
