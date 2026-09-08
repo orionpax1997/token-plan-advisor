@@ -1,0 +1,38 @@
+{
+  "page": "Artificial Analysis 官方主页 Intelligence 区块",
+  "intelligence_index_version_display": "Artificial Analysis Intelligence Index v4.1.1",
+  "component_evals_listed": [
+    "GDPval-AA v2",
+    "𝜏³-Banking",
+    "Terminal-Bench v2.1",
+    "SciCode",
+    "Humanity's Last Exam",
+    "GPQA Diamond",
+    "CritPt",
+    "AA-Omniscience",
+    "AA-LCR"
+  ],
+  "intelligence_chart_coverage": {
+    "display": "29 of 624 models",
+    "shown": 29,
+    "of_total": 624
+  },
+  "frontier_creators_chart_coverage": {
+    "display": "17 of 58 model creators",
+    "shown": 17,
+    "of_total": 58,
+    "note": "仅该图表视图的展示范围；不证明 Artificial Analysis 只覆盖 58 个 Vendor，也不证明 17 个 Vendor 的所有模型都进入指数"
+  },
+  "activity_stream": {
+    "methodology_updated": "20 Aug",
+    "other_observed_dates": ["27 Aug"],
+    "year_shown": false,
+    "unified_data_updated_at": null
+  },
+  "direction_labels": {
+    "intelligence_index": "Higher is better",
+    "cost_per_task": "越低越好（与 Intelligence 分数分开标注）",
+    "output_token_per_task": "单独展示，不是 Intelligence 分数的组成指标",
+    "time_per_task": "单独展示，不是 Intelligence 分数的组成指标"
+  }
+}

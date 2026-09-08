@@ -1,0 +1,7 @@
+{
+  "page": "Artificial Analysis 官方方法总览页（methodology landing）",
+  "index_definition": "Artificial Analysis 将 Intelligence Index 定义为综合语言模型能力的合成指标，覆盖 reasoning、knowledge、maths、programming；官方同时明确所有评测指标都有局限，未必适用于每种使用场景",
+  "open_weights_view": "页面的 Open Weights 视图还标注商业使用受限或非商业许可状态",
+  "cost_per_task_definition": "Intelligence Index 的 cost per task 是按各评测权重加权的单任务成本；官方定义使用模型运行工作负载实际消耗的 input、cached、output token 价格，再除以任务数。模型输出或 reasoning token 越多，即使单 token 价格相同，单任务成本也可能更高。cost per task 标为越低越好，与 Intelligence 分数（Higher is better）分开展示",
+  "modality_scope": "Index 主要是 text-based、English-language；image input、speech input 和 multilingual performance 单独评测"
+}

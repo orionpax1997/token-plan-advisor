@@ -1,0 +1,15 @@
+{
+  "page": "Artificial Analysis 官方指数详情页",
+  "path": "/evaluations/artificial-analysis-intelligence-index",
+  "intelligence_index_version_display": "Artificial Analysis Intelligence Index v4.1.1",
+  "intelligence_index_coverage": {
+    "display": "30 of 612 models",
+    "shown": 30,
+    "of_total": 612
+  },
+  "direction_labels": {
+    "intelligence_index": "Higher is better",
+    "cost_per_task": "越低越好（与 Intelligence 分数分开标注）"
+  },
+  "note": "与主页 Intelligence 图表的 29 of 624 models 不同：两个官方视图的分子/分母不同，页面为动态数据，不能合并成一个稳定的总覆盖数，也不能把图表展示数当作完整已评测全集"
+}

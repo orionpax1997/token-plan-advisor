@@ -166,13 +166,20 @@ export const BenchmarkRecord = z
     }),
     /** 主体身份：benchmark 记录的主体是配置，不是 Plan（探索 02 关联规则 1）。 */
     subject_identity: z.strictObject({
-      /** v1 仅支持配置级主体；裸模型结果须由 conditions 中的 harness 说明。 */
-      subject_kind: z.enum(["model_configuration"]),
-      /** 官方榜单上的模型标签（展示口径；不得据此反推 API ID 或 Vendor）。 */
+      /**
+       * v1 主体两种：
+       *   - model_configuration：模型/Agent/effort 组合的分数记录（DeepSWE/Terminal-Bench/Zapier）；
+       *   - benchmark_component：benchmark/Index 组成组件的结构记录（ticket 03：AA Intelligence
+       *     v4.1.1 快照无逐模型分数，记录主体是组成评测定义与官方权重，非模型条目）。
+       */
+      subject_kind: z.enum(["model_configuration", "benchmark_component"]),
+      /** 主体展示名：model_configuration=官方榜单模型标签；benchmark_component=组成评测官方名称。 */
       model_display_name: z.string(),
-      /** 不可变 API model id / snapshot；官方未声明时保持 null（unknown stays null）。 */
+      /** 不可变 API model id / snapshot；官方未声明时保持 null（unknown stays null）；
+       *  benchmark_component 主体不绑定模型条目 → null + not_applicable。 */
       model_api_id_or_snapshot: StringField(),
-      /** 官方给出的 provider/vendor 字段；缺失时保持 null，不得以模型名或结果反推。 */
+      /** 官方给出的 provider/vendor 字段；缺失时保持 null，不得以模型名或结果反推；
+       *  benchmark_component 主体无 provider/vendor 概念 → null + not_applicable（维护主体在 benchmark.maintainer）。 */
       vendor: StringField(),
       agent_or_harness: z.string(),
       /** reasoning effort 或官方配置名；官方未设置（default 配置）时 null + not_applicable。 */
@@ -315,6 +322,11 @@ export const BenchmarkCollection = z.strictObject({
         z.strictObject({
           domain: z.string(),
           n_tasks: z.number().int().nonnegative(),
+          /**
+           * 该域在来源官方加权方案中的权重原值（百分数，如 Artificial Analysis
+           * Intelligence 组成评测的 Index 权重 16%）；无官方加权方案的 benchmark 省略。
+           */
+          weight_percent: z.number().optional(),
           topics: z.array(z.string()).optional(),
         }),
       )

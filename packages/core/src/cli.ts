@@ -10,6 +10,7 @@ import { createGeminiCodeAssistProvider } from "./providers/gemini/provider.ts";
 import { createDeepSweAdapter } from "./adapters/deepswe/adapter.ts";
 import { createTerminalBenchAdapter } from "./adapters/terminal-bench/adapter.ts";
 import { createZapierAutomationBenchAdapter } from "./adapters/zapier-automationbench/adapter.ts";
+import { createArtificialAnalysisIntelligenceAdapter } from "./adapters/artificial-analysis-intelligence/adapter.ts";
 import type { DataProvider } from "./providers/types.ts";
 import type { BenchmarkAdapter } from "./adapters/types.ts";
 import { validatePlanCollection, type PlanCollection } from "./schema/plan.ts";
@@ -74,6 +75,7 @@ const BENCHMARK_ADAPTER_FACTORIES: Record<string, () => BenchmarkAdapter> = {
   deepswe: createDeepSweAdapter,
   "terminal-bench": createTerminalBenchAdapter,
   "zapier-automationbench": createZapierAutomationBenchAdapter,
+  "artificial-analysis-intelligence": createArtificialAnalysisIntelligenceAdapter,
 };
 
 const USAGE = `Usage: tpa <command> [args]

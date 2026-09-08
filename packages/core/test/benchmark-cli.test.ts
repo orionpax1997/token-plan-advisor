@@ -78,12 +78,33 @@ describe.skipIf(!hasBuild)("tpa CLI 端到端（collect-benchmark，spawn dist/t
     }
   });
 
+  it("collect-benchmark artificial-analysis-intelligence 输出通过 Benchmark Schema 校验的机读 JSON", async () => {
+    const result = await run(["collect-benchmark", "artificial-analysis-intelligence"]);
+    if (result.code !== 0) {
+      throw new Error(`CLI exited ${result.code}: ${result.stderr}`);
+    }
+    const parsed = JSON.parse(result.stdout);
+    const validation = validateBenchmarkCollection(parsed);
+    expect(validation.ok).toBe(true);
+    if (validation.ok) {
+      expect(validation.value.collection.adapter_id).toBe("artificial-analysis-intelligence");
+      // 完整版本号含 patch（不得降级为 API 的 4.1）
+      expect(validation.value.benchmark.benchmark_version).toBe("v4.1.1");
+      // 9 个组成评测在 task_set.domains 全枚举；Index 覆盖数差异双视图保留
+      expect(validation.value.task_set.domains).toHaveLength(9);
+      expect(validation.value.benchmark.leaderboard_or_dataset_revision).toContain("29_of_624");
+      expect(validation.value.benchmark.leaderboard_or_dataset_revision).toContain("30_of_612");
+      expect(validation.value.records.length).toBeGreaterThan(0);
+    }
+  });
+
   it("未知 benchmark 来源 → 退出码 2，stderr 说明可用来源", async () => {
     const result = await run(["collect-benchmark", "nope"]);
     expect(result.code).toBe(2);
     expect(result.stderr).toContain("nope");
     expect(result.stderr).toContain("terminal-bench");
     expect(result.stderr).toContain("zapier-automationbench");
+    expect(result.stderr).toContain("artificial-analysis-intelligence");
     expect(result.stdout).toBe("");
   });
 

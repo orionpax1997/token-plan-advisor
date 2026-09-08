@@ -96,6 +96,7 @@ function minimalCollection(overrides: Record<string, unknown> = {}) {
       n_tasks: 113,
       n_repositories: 91,
       languages: [{ language: "go", n_tasks: 34 }],
+      domains: [] as { domain: string; n_tasks: number; weight_percent?: number; topics?: string[] }[],
     },
     records: [minimalRecord()],
     sources: [
@@ -260,6 +261,43 @@ describe("Benchmark Schema v1 校验规则", () => {
     subject.vendor = { value: "openai", status: "unobtainable", source_ids: [] };
     expect(validateBenchmarkCollection(doc).ok).toBe(false);
     subject.vendor = { value: "openai", status: "verified", source_ids: [] };
+    expect(validateBenchmarkCollection(doc).ok).toBe(false);
+  });
+
+  it("subject_kind 支持 benchmark_component（ticket 03：AA Intelligence 无逐模型分数时，记录主体为 Index 组成组件）", () => {
+    const doc = minimalCollection();
+    doc.benchmark = {
+      ...doc.benchmark,
+      benchmark_id: "artificial-analysis-intelligence",
+      benchmark_version: "v4.1.1",
+    };
+    const record = doc.records[0] as Record<string, unknown>;
+    record.record_id = "artificial-analysis-intelligence:v4.1.1:terminal-bench-v2-1:official_index_weight";
+    record.normalized_metric = {
+      value: 16,
+      metric_space: "artificial-analysis-intelligence:v4.1.1:official_index_weight",
+    };
+    record.raw_metric = {
+      ...(record.raw_metric as Record<string, unknown>),
+      metric_value: 16,
+      metric_unit: "percent_of_composite_index",
+    };
+    record.confidence_status = "point_estimate_only";
+    const raw = record.raw_metric as Record<string, unknown>;
+    raw.confidence_interval_or_error = { value: null, status: "not_applicable", source_ids: [] };
+    record.subject_identity = {
+      subject_kind: "benchmark_component",
+      model_display_name: "Terminal-Bench v2.1",
+      model_api_id_or_snapshot: { value: null, status: "not_applicable", source_ids: [] },
+      vendor: { value: null, status: "not_applicable", source_ids: [] },
+      agent_or_harness: "Terminus 2 agent harness + E2B sandbox",
+      reasoning_effort_or_configuration: { value: null, status: "not_applicable", source_ids: [] },
+    };
+    // domains 数值化官方权重（ticket 03：Index 加权方案可机读重建）
+    doc.task_set.domains = [{ domain: "Terminal-Bench v2.1", n_tasks: 89, weight_percent: 16 }];
+    expect(validateBenchmarkCollection(doc).ok).toBe(true);
+    // weight_percent 必须是数值（官方百分数原值），不接受字符串
+    (doc.task_set.domains[0] as Record<string, unknown>).weight_percent = "16";
     expect(validateBenchmarkCollection(doc).ok).toBe(false);
   });
 

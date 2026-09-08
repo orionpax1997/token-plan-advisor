@@ -1,0 +1,14 @@
+{
+  "document": "Artificial Analysis 网站 Terms of Use",
+  "url": "https://artificialanalysis.ai/docs/legal/Terms-of-Use.pdf",
+  "rights_holder": "Artificial Analysis, Inc.（网站 Terms of Use 将该公司列为站点及站点内容的权利主体）",
+  "license_grant": "对网站访问授予的是可撤销、非转让、非独占、有限的个人非商业使用许可",
+  "prohibitions": [
+    "商业利用网站或其展示内容",
+    "复制、分发、下载网站内容",
+    "自动化查询",
+    "strip/scrape/mine 数据（公共搜索引擎在条款规定范围内的例外除外）"
+  ],
+  "consequence_note": "不能把公开页面当作允许批量抓取、再发布或建立竞品服务的开放数据许可",
+  "api_redistribution": "API 页面另行说明可通过 Commercial package 协商客户产品、报告和数据 feed 的再分发权；在获得明确商业授权前，API/网页数据只可作为内部研究证据，不主张外部再分发权"
+}

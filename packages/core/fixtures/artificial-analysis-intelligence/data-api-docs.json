@@ -1,0 +1,32 @@
+{
+  "page": "Artificial Analysis 官方 Data API 文档",
+  "base_url": "https://artificialanalysis.ai/api/v2",
+  "auth": "API 需要在 x-api-key header 中提供组织 API key；官方建议密钥只放在服务端，不要放进浏览器或移动端",
+  "intelligence_index_version_field": {
+    "field_name": "intelligence_index_version",
+    "format": "去掉 v 的 major.minor 数字（例如 4.1），不反映 patch 版本",
+    "example_value": "4.1",
+    "patch_note": "官方说明 patch 版本仍可能因 grader 或数据集版本升级而改变分数；API 的 4.1 不能替代网页上的 v4.1.1"
+  },
+  "tiers": [
+    {
+      "tier": "Free",
+      "data_scope": "公开语言模型 endpoint 的 headline indices、中位性能和输入/输出价格",
+      "rate_limit_per_24h": 100
+    },
+    {
+      "tier": "Pro",
+      "data_scope": "模型级详情、完整价格、性能分位数等；完整评测集、token counts、blended pricing、context window、parameters、modalities、licensing 等更完整字段",
+      "rate_limit_per_24h": 500
+    },
+    {
+      "tier": "Commercial",
+      "data_scope": "Provider 级数据、性能时间序列和经协商的扩展数据；可通过 Commercial package 协商客户产品、报告和数据 feed 的再分发权",
+      "rate_limit_per_24h": null
+    }
+  ],
+  "missing_tier_response": 403,
+  "attribution": "所有 API 使用均要求注明 Artificial Analysis 来源；API 使用同时受 Terms of Use 和 Data Platform Terms 约束",
+  "model_entry_fields": ["name", "slug", "release_date", "reasoning_model", "context_window_tokens", "model_creator.name"],
+  "model_entry_note": "模型版本/变体应按 Artificial Analysis 的模型条目和 release date 记录，而不是只按 Vendor 名称归并；示例 JSON 不是任何页面快照中全部模型的实际结果"
+}

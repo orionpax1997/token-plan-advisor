@@ -36,7 +36,12 @@ tpa collect-benchmark deepswe            # DeepSWE v1.1 官方快照导入（无
 tpa collect-benchmark deepswe --pretty
 ```
 
-已接入 Benchmark Adapter：`deepswe`（Datacurve DeepSWE v1.1，70 个 leaderboard 配置 × 3 条记录：pass@1 / pass@4 / 资源聚合）。
+已接入 Benchmark Adapter：
+
+- `deepswe`（Datacurve DeepSWE v1.1，70 个 leaderboard 配置 × 3 条记录：pass@1 / pass@4 / 资源聚合）；
+- `terminal-bench`（Terminal-Bench 4.0 `4-0-0`，18 个 Agent+Model+Effort 三元组 × 2 条记录）；
+- `zapier-automationbench`（Zapier AutomationBench 1.0.6，私有 held-out 榜单 10 行 × 2 条记录，公开 600-task 仓库以 `task_set.domains` 表达）；
+- `artificial-analysis-intelligence`（Artificial Analysis Intelligence v4.1.1：完整版本与官方权重随每条记录保存，5 条可映射组成评测的官方权重记录 + 9 个组成评测在 `task_set.domains` 全枚举；Index 与组成评测独立保存，禁止重新加权后仍称 Artificial Analysis Index 或拆成 Coding Plan 总分；主页/详情页覆盖数差异按快照差异双视图保存；ToS 限制自动化访问/商业使用，fixture 为结构化转写，授权申请为待办）。
 
 输出为**机读 JSON**（Benchmark Record Schema v1，`schema_version: "1"`）：
 
