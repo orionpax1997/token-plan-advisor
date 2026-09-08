@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Pricing · Cursor</title>
+  <!-- 快照说明：cursor.com/pricing 为客户端渲染营销页。静态 HTML 仅渲染月付与 4 张卡片，
+       Monthly/Yearly 切换与 Pro+/Ultra 档位切换经 JS 渲染（本次未执行）。
+       页面内嵌 JSON-LD Offer 结构化数据列出全部档位价格，为 JS_RENDERED_DATA 分类的事实依据。
+       采集时间：2026-09-07（页面无 Last updated 时间戳）。 -->
+</head>
+<body>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@graph":[
+    {"@type":"Offer","name":"Hobby","price":"0","priceCurrency":"USD"},
+    {"@type":"Offer","name":"Pro","price":"20","priceCurrency":"USD"},
+    {"@type":"Offer","name":"Pro+","price":"60","priceCurrency":"USD"},
+    {"@type":"Offer","name":"Ultra","price":"200","priceCurrency":"USD"},
+    {"@type":"Offer","name":"Teams","price":"40","priceCurrency":"USD"}
+  ]}
+  </script>
+
+  <h1>Pricing</h1>
+
+  <div class="card" id="plan-hobby">
+    <h2>Hobby</h2>
+    <p class="price">Free</p>
+    <p>Limited Agent requests</p>
+    <p>Limited Tab completions</p>
+    <p>No credit card required.</p>
+  </div>
+
+  <div class="card" id="plan-individual">
+    <h2>Individual</h2>
+    <p class="price">$20 / mo.</p>
+    <p>Get Pro</p>
+    <a href="https://cursor.com/api/auth/checkoutDeepControl?yearly=false">Checkout</a>
+    <!-- 档位切换控件（Pro+/Ultra）为客户端渲染，静态快照不包含其卡片文本 -->
+  </div>
+
+  <div class="card" id="plan-teams">
+    <h2>Teams</h2>
+    <p class="price">$40 / user / mo.</p>
+    <a href="https://cursor.com/team/new-team">New Team</a>
+  </div>
+
+  <div class="card" id="plan-enterprise">
+    <h2>Enterprise</h2>
+    <p class="price">Custom</p>
+    <a href="https://cursor.com/contact-sales">Contact sales</a>
+  </div>
+
+  <section id="faq">
+    <h3>What payment methods do you support?</h3>
+    <p>Self-serve plans support all major credit and debit cards. For invoice-based billing and wire transfers, please contact us to discuss the Enterprise plan.</p>
+    <p>Complete payment through Stripe checkout. Plan changes are managed at cursor.com/dashboard/billing.</p>
+    <h3>Where can I buy Cursor?</h3>
+    <p>Cursor subscriptions are only sold directly through cursor.com. We do not authorize any resellers or third-party sellers.</p>
+  </section>
+</body>
+</html>

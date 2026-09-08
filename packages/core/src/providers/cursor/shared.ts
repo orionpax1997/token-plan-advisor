@@ -1,5 +1,5 @@
 /**
- * CodeBuddy 家族的回退链派生入口（实现统一在 providers/_shared.ts）。
+ * Cursor 家族的回退链派生入口（实现统一在 providers/_shared.ts）。
  */
 export type {
   SourceChainSpec,

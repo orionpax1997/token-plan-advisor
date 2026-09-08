@@ -1,0 +1,9 @@
+{
+  "captured_at": "2026-09-07T14:30:00.000Z",
+  "note": "Cursor Start（印度区域档，INR）快照：直接抓取自官方 URL；fixture 模式的 fetched_at 取 captured_at。",
+  "sources": [
+    { "source_id": "cursor-start-help", "file": "cursor-start-help.md", "url": "https://cursor.com/help/account-and-billing/cursor-start" },
+    { "source_id": "cursor-start-blog", "file": "cursor-start-blog.md", "url": "https://cursor.com/blog/cursor-start-india" },
+    { "source_id": "cursor-start-regions", "file": "cursor-start-regions.md", "url": "https://cursor.com/help/security-and-privacy/regions" }
+  ]
+}

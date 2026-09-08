@@ -109,12 +109,57 @@ describe("tpa collect codebuddy-cn / codebuddy-intl（CLI seam，fixture 模式�
       expect(validation.value.source_chains.length).toBeGreaterThanOrEqual(2);
     }
   });
+});
 
-  it("用法提示列出全部 Provider", async () => {
+describe("tpa collect cursor / cursor-start-in（CLI seam，fixture 模式）", () => {
+  it("cursor 退出码 0 且输出通过 Schema 校验，JS 渲染失败码与 API_AVAILABLE 可见", async () => {
+    const cap = capture();
+    const code = await runCli(["collect", "cursor", "--mode", "fixture"], cap.io);
+    expect(code).toBe(0);
+    const doc = JSON.parse(cap.stdout()) as PlanCollection;
+    const validation = validatePlanCollection(doc);
+    expect(validation.ok).toBe(true);
+    if (validation.ok) {
+      const value = validation.value;
+      expect(value.collection.provider_id).toBe("anysphere-cursor");
+      expect(value.regional_variant).toBeNull();
+      // usd_equivalence 双池原语
+      expect(value.quota_system.quota_model).toBe("usd_equivalence");
+      expect(value.plans.find((p) => p.plan_id === "cursor-pro")?.quota.windows.length).toBe(2);
+      // JS 渲染定价页：失败码 JS_RENDERED_DATA 在机读输出中可见
+      expect(JSON.stringify(value.sources)).toContain("JS_RENDERED_DATA");
+      expect(JSON.stringify(value.source_chains)).toContain("JS_RENDERED_DATA");
+      // 失败分类：API_AVAILABLE / LOGIN_REQUIRED / TIME_DEPENDENT 均进入输出
+      const codes = new Set(value.unresolved_facts.map((f) => f.failure_code).filter(Boolean));
+      expect(codes.has("API_AVAILABLE")).toBe(true);
+      expect(codes.has("LOGIN_REQUIRED")).toBe(true);
+      expect(codes.has("TIME_DEPENDENT")).toBe(true);
+      // 回退链记录在案
+      expect(value.source_chains.length).toBeGreaterThanOrEqual(6);
+    }
+  });
+
+  it("cursor-start-in 退出码 0 且区域变体/INR 原语独立可见", async () => {
+    const cap = capture();
+    const code = await runCli(["collect", "cursor-start-in", "--mode", "fixture"], cap.io);
+    expect(code).toBe(0);
+    const doc = JSON.parse(cap.stdout()) as PlanCollection;
+    const validation = validatePlanCollection(doc);
+    expect(validation.ok).toBe(true);
+    if (validation.ok) {
+      const value = validation.value;
+      expect(value.collection.provider_id).toBe("anysphere-cursor-start-in");
+      expect(value.regional_variant?.variant_id).toBe("cursor-start-in");
+      expect(value.quota_system.quota_model).toBe("usage_tier");
+      expect(value.plans[0]?.price_list[0]?.currency.value).toBe("INR");
+      expect(value.plans[0]?.price_list[0]?.amount.value).toBe(649);
+    }
+  });
+
+  it("用法提示列出全部 Provider（含新增 cursor 系列）", async () => {
     const cap = capture();
     await runCli(["--help"], cap.io);
-    expect(cap.stderr()).toContain("zai");
-    expect(cap.stderr()).toContain("codebuddy-cn");
-    expect(cap.stderr()).toContain("codebuddy-intl");
+    // 注册表整行匹配：证明 cursor 与 cursor-start-in 各自独立列出
+    expect(cap.stderr()).toContain("zai, codebuddy-cn, codebuddy-intl, cursor, cursor-start-in");
   });
 });
