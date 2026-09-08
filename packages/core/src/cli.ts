@@ -7,6 +7,7 @@ import { createCursorStartInProvider } from "./providers/cursor/start/provider.t
 import { createTraeIntlProvider } from "./providers/trae/intl/provider.ts";
 import { createTraeCnProvider } from "./providers/trae/cn/provider.ts";
 import { createGeminiCodeAssistProvider } from "./providers/gemini/provider.ts";
+import { createDeepSeekApiProvider } from "./providers/deepseek/api/provider.ts";
 import { createDeepSweAdapter } from "./adapters/deepswe/adapter.ts";
 import { createTerminalBenchAdapter } from "./adapters/terminal-bench/adapter.ts";
 import { createZapierAutomationBenchAdapter } from "./adapters/zapier-automationbench/adapter.ts";
@@ -31,13 +32,21 @@ const PROVIDER_FACTORIES: Record<string, () => DataProvider> = {
   "trae-intl": createTraeIntlProvider,
   "trae-cn": createTraeCnProvider,
   "gemini-codeassist": createGeminiCodeAssistProvider,
+  "deepseek-api": createDeepSeekApiProvider,
 };
 
 /**
- * collect-all 命令要采集的 Provider 子集（spec §In Scope: 7 项 coding-subscription）。
- * 顺序按 PROVIDER_FACTORIES 的注册顺序；不再单独定义。
+ * collect-all 命令要采集的 Provider 子集。
+ * coding-subscription 是本批比较排行榜的主战场；api-usage 候选（deepseek-api）
+ * 因 Plan Type 不同，单独列在 coverage_scope.api_usage 下，不与 coding-subscription
+ * 混合进同一排行榜直接比较（CONTEXT.md「Plan Type」）。
  */
-const CODING_SUBSCRIPTION_PROVIDERS = Object.keys(PROVIDER_FACTORIES);
+const CODING_SUBSCRIPTION_PROVIDERS = Object.keys(PROVIDER_FACTORIES).filter(
+  (id) => id !== "deepseek-api",
+);
+const API_USAGE_PROVIDERS = Object.keys(PROVIDER_FACTORIES).filter(
+  (id) => id === "deepseek-api",
+);
 
 /**
  * 尚未接入的 coding 编码订阅候选与缺口声明。
@@ -65,6 +74,10 @@ const COVERAGE_GAPS: { name: string; reason: string }[] = [
   {
     name: "其他随时间新增的 coding-subscription 候选",
     reason: "research/ 目录外的 Vendor 需先完成官方来源调研再接入；collect-all 不宣称市场完整",
+  },
+  {
+    name: "Claude API / OpenAI API / Gemini API / 阿里云百炼 Qwen API",
+    reason: "api-usage 候选，与 coding-subscription 不同 Plan Type 不直接比较（CONTEXT.md「Plan Type」）；deepseek-api 已首批接入，其他 api-usage 候选尚待后续 ticket 扩展",
   },
 ];
 
@@ -283,8 +296,7 @@ async function runCollectBenchmark(rest: string[], io: CliIo): Promise<number> {
 }
 
 /**
- * collect-all 命令：一次性输出全部已接入 coding-subscription Provider
- * 与覆盖缺口声明（spec §In Scope 7 项）。
+ * collect-all 命令：一次性输出全部已接入 Provider 与覆盖缺口声明。
  *
  * 输出 schema：
  * {
@@ -292,11 +304,17 @@ async function runCollectBenchmark(rest: string[], io: CliIo): Promise<number> {
  *   collected_at: ISO8601,
  *   tool_version: "x.y.z",
  *   mode: "fixture" | "live",
- *   coverage_scope: { plan_type: "coding-subscription", count: N, providers: [...] },
+ *   coverage_scope: {
+ *     plan_types: ["coding-subscription", "api-usage", ...],
+ *     coding_subscription: { count: N, providers: [...] },
+ *     api_usage: { count: N, providers: [...] },
+ *   },
  *   coverage_gaps: [{ name, reason }, ...],
  *   collections: { <provider_id>: PlanCollection, ... }
  * }
  *
+ * 不同 Plan Type 不默认放入同一排行榜直接比较（CONTEXT.md「Plan Type」）；
+ * 本批 coding-subscription 8 项 + api-usage 1 项（deepseek-api）按类型分桶列出。
  * 单个 Provider 采集失败不阻塞其他 Provider；失败的 Provider 收集于 errors 字段。
  * 不宣称市场完整——coverage_gaps 字段如实声明尚未接入的来源。
  */
@@ -309,8 +327,9 @@ async function runCollectAll(rest: string[], io: CliIo): Promise<number> {
 
   const collections: Record<string, PlanCollection> = {};
   const errors: { provider_id: string; error: string }[] = [];
+  const allProviders = [...CODING_SUBSCRIPTION_PROVIDERS, ...API_USAGE_PROVIDERS];
 
-  for (const providerId of CODING_SUBSCRIPTION_PROVIDERS) {
+  for (const providerId of allProviders) {
     const result = await collectOne(providerId, parsed.mode, io);
     if (result) {
       collections[providerId] = result;
@@ -326,9 +345,15 @@ async function runCollectAll(rest: string[], io: CliIo): Promise<number> {
     tool_version: toolVersion,
     mode: parsed.mode,
     coverage_scope: {
-      plan_type: "coding-subscription",
-      count: CODING_SUBSCRIPTION_PROVIDERS.length,
-      providers: CODING_SUBSCRIPTION_PROVIDERS,
+      plan_types: ["coding-subscription", "api-usage"],
+      coding_subscription: {
+        count: CODING_SUBSCRIPTION_PROVIDERS.length,
+        providers: CODING_SUBSCRIPTION_PROVIDERS,
+      },
+      api_usage: {
+        count: API_USAGE_PROVIDERS.length,
+        providers: API_USAGE_PROVIDERS,
+      },
     },
     coverage_gaps: COVERAGE_GAPS,
     errors,
@@ -338,7 +363,7 @@ async function runCollectAll(rest: string[], io: CliIo): Promise<number> {
   writeJson(io, summary, parsed.pretty);
 
   // 部分失败时仍以 0 退出（输出包含错误明细），全部失败时退出 1
-  if (errors.length === CODING_SUBSCRIPTION_PROVIDERS.length) {
+  if (errors.length === allProviders.length) {
     return 1;
   }
   return 0;

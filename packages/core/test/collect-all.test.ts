@@ -21,9 +21,9 @@ interface CollectAllOutput {
   tool_version: string;
   mode: string;
   coverage_scope: {
-    plan_type: string;
-    count: number;
-    providers: string[];
+    plan_types: string[];
+    coding_subscription: { count: number; providers: string[] };
+    api_usage: { count: number; providers: string[] };
   };
   coverage_gaps: { name: string; reason: string }[];
   errors: { provider_id: string; error: string }[];
@@ -31,18 +31,24 @@ interface CollectAllOutput {
 }
 
 describe("tpa collect-all 命令", () => {
-  it("退出码 0，输出包含全部已接入 Provider + 覆盖缺口", async () => {
+  it("退出码 0,输出包含全部已接入 Provider + 覆盖缺口", async () => {
     const cap = capture();
     const code = await runCli(["collect-all"], cap.io);
     expect(code).toBe(0);
     const parsed = JSON.parse(cap.stdout()) as CollectAllOutput;
     expect(parsed.schema_version).toBe("1");
-    expect(parsed.coverage_scope.plan_type).toBe("coding-subscription");
-    // 8 个 Provider：zai / codebuddy-cn / codebuddy-intl / cursor / cursor-start-in / trae-intl / trae-cn / gemini-codeassist
-    expect(parsed.coverage_scope.providers.length).toBe(8);
-    expect(parsed.coverage_scope.providers).toContain("trae-intl");
-    expect(parsed.coverage_scope.providers).toContain("trae-cn");
-    expect(parsed.coverage_scope.providers).toContain("gemini-codeassist");
+    // 本批两个 Plan Type 分桶:coding-subscription 8 + api-usage 1 (deepseek-api)
+    expect(parsed.coverage_scope.plan_types).toEqual(["coding-subscription", "api-usage"]);
+    expect(parsed.coverage_scope.coding_subscription.count).toBe(8);
+    expect(parsed.coverage_scope.coding_subscription.providers).toHaveLength(8);
+    expect(parsed.coverage_scope.coding_subscription.providers).toContain("trae-intl");
+    expect(parsed.coverage_scope.coding_subscription.providers).toContain("trae-cn");
+    expect(parsed.coverage_scope.coding_subscription.providers).toContain("gemini-codeassist");
+    expect(parsed.coverage_scope.api_usage.count).toBe(1);
+    expect(parsed.coverage_scope.api_usage.providers).toContain("deepseek-api");
+    // collections 实际同时包含 9 项
+    expect(Object.keys(parsed.collections)).toHaveLength(9);
+    expect(parsed.collections["deepseek-api"]).toBeDefined();
     // 覆盖缺口至少 1 项
     expect(parsed.coverage_gaps.length).toBeGreaterThanOrEqual(1);
   });

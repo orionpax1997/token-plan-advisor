@@ -1,0 +1,13 @@
+{
+  "captured_at": "2026-09-08T03:30:00.000Z",
+  "note": "DeepSeek API 快照：直接抓取自官方 api-docs.deepseek.com 与 cdn.deepseek.com/policies；fixture 模式的 fetched_at 取 captured_at。本批首份 api-usage Plan Type。",
+  "sources": [
+    { "source_id": "deepseek-api-pricing", "file": "deepseek-api-pricing.md", "url": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/" },
+    { "source_id": "deepseek-api-rate-limit", "file": "deepseek-api-rate-limit.md", "url": "https://api-docs.deepseek.com/zh-cn/quick_start/rate_limit/" },
+    { "source_id": "deepseek-api-terms-service", "file": "deepseek-api-terms-of-service.md", "url": "https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html" },
+    { "source_id": "deepseek-api-privacy", "file": "deepseek-api-privacy-policy.md", "url": "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html" },
+    { "source_id": "deepseek-api-terms-use", "file": "deepseek-api-terms-of-use.md", "url": "https://cdn.deepseek.com/policies/en-US/deepseek-terms-of-use.html" },
+    { "source_id": "deepseek-api-model-disclosure", "file": "deepseek-api-model-disclosure.md", "url": "https://cdn.deepseek.com/policies/en-US/model-algorithm-disclosure.html" },
+    { "source_id": "deepseek-api-change-log", "file": "deepseek-api-change-log.md", "url": "https://api-docs.deepseek.com/zh-cn/updates/" }
+  ]
+}

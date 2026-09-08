@@ -192,7 +192,7 @@ interface CollectAllOutput {
   collections: Record<string, PlanCollection>;
 }
 
-const ELIGIBLE = new Set(["codebuddy-intl", "cursor", "trae-intl", "trae-cn"]);
+const ELIGIBLE = new Set(["codebuddy-intl", "cursor", "trae-intl", "trae-cn", "deepseek-api"]);
 
 describe("CLI collect-all 输出中的门控结论（fixture 模式）", () => {
   let collections: Record<string, PlanCollection>;
@@ -209,7 +209,8 @@ describe("CLI collect-all 输出中的门控结论（fixture 模式）", () => {
   });
 
   it("每个 collection 都携带 ranking_gate 且通过 Schema 校验", () => {
-    expect(Object.keys(collections)).toHaveLength(8);
+    // 8 个 coding-subscription + 1 个 api-usage (deepseek-api)
+    expect(Object.keys(collections)).toHaveLength(9);
     for (const [providerId, collection] of Object.entries(collections)) {
       expect(collection.ranking_gate, providerId).toBeDefined();
       const validation = validatePlanCollection(collection);

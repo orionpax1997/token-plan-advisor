@@ -45,7 +45,7 @@ applies_to: "@token-plan-advisor/core >= 0.1.0（tpa CLI collect / collect-all �
 |---|---|---|
 | `schema_version` | `"1"` | 契约版本 |
 | `collected_at` / `tool_version` / `mode` | 汇总元数据 | 同上 |
-| `coverage_scope` | `{plan_type, count, providers[]}` | 本批 8 个 coding-subscription Provider |
+| `coverage_scope` | `{plan_types[], coding_subscription: {count, providers[]}, api_usage: {count, providers[]}}` | 按 Plan Type 分桶的采集覆盖范围：本批 8 项 coding-subscription + 1 项 api-usage（deepseek-api）；同一 Plan Type 内的 Provider 才有可比性，不同 Plan Type 不默认放入同一排行榜直接比较（CONTEXT.md「Plan Type」） |
 | `coverage_gaps` | `{name, reason}[]` | 尚未接入的候选与原因（不宣称市场完整） |
 | `errors` | `{provider_id, error}[]` | 单 Provider 失败不阻塞他项；全部失败才退出码 1 |
 | `collections` | `Record<provider_id, PlanCollection>` | 各 Provider 的完整采集文档 |
@@ -99,7 +99,23 @@ applies_to: "@token-plan-advisor/core >= 0.1.0（tpa CLI collect / collect-all �
 ### v1（2026-09-08 冻结）
 
 - 初始冻结：ticket 01–05 建立的 Plan Schema v1 + `collect`/`collect-all` 输出 + `ranking_gate` 门控 + 三时间戳双向核对 + fixture 管理流程。
+
+### v1.1（2026-09-09 补丁：deepseek-api 接入与 coverage_scope 按 Plan Type 分桶）
+
+- **变更动机**：本批接入首个 api-usage Provider（`deepseek-api`），与 coding-subscription 不同 Plan Type 不默认放入同一排行榜直接比较（CONTEXT.md「Plan Type」）。
+- **collect-all 输出字段变更**：`coverage_scope` 由扁平 `{plan_type, count, providers[]}` 改为按 Plan Type 分桶的嵌套结构：
+  - 旧：`{ plan_type: "coding-subscription", count: 8, providers: [...] }`
+  - 新：`{ plan_types: ["coding-subscription", "api-usage"], coding_subscription: { count, providers[] }, api_usage: { count, providers[] } }`
+  - `PlanCollection` 顶层键集、字段语义、封闭枚举、`ranking_gate` 门控、三时间戳双向核对、fixture 管理流程均未变化。
+- **collect 输出（PlanCollection）字段无变化**：`deepseek-api` 仍走同一 Schema v1，仅 `plans[]` 元素的 `plan_type: "api-usage"`、`quota.quota_model: "concurrency"`、`price_list[].billing_period: "one_time"` 与既有 coding-subscription 形态不同；类型与枚举已存在于 v1，无需升版。
+- **迁移说明**：
+  - `test/contract-freeze.test.ts`：`coverage_scope` 断言改为检查嵌套结构（`coding_subscription.count === 8 && api_usage.providers.includes("deepseek-api")`）；
+  - `test/collect-all.test.ts`：`coverage_scope` 形状断言同步；
+  - `test/ranking-gate.test.ts`：ELIGIBLE 集合新增 `deepseek-api`，总 collection 数从 8 改为 9。
+- 不属于 v1 → v2 升版：仅 `collect-all` 的 `coverage_scope` 字段形态调整，未触动 Plan Schema v1、Schema 枚举、门控语义；现有测试已同步覆盖新形态。
+
 - 已知局限（记录在案，v1 内不修）：
   - `quota_model: credits_5h_weekly` 被 CodeBuddy 双区与 Trae CN 复用于**月度积分**体系（枚举缺月度积分原语的折中，ticket 04 引入）；真实窗口以各 `quota.windows[].window_type` 为准，`quota_system.unit` 携带官方单位名。如需拆分专用原语须升版 v2。
   - Gemini Code Assist 的 `usage_tier` 原语复用于「日请求分档」限额（`messages_5h` 因无 5h 窗口语义不可用）；窗口口径以 `windows[].window_type: daily` 为准。
+  - DeepSeek API 的 `billing_period: "one_time"` 表示「per-token」计费（无订阅周期）；与 monthly/quarterly/annual 等订阅周期并列于封闭枚举内，语义自洽；若未来引入 burst/credits 等其他原语需扩 BillingPeriods。
 - `recommend` / 分析类 CLI 契约：未冻结（按 ADR-0001 等探索 02 落地后另立契约文件）。

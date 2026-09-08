@@ -60,7 +60,11 @@ interface CollectAllOutput {
   collected_at: string;
   tool_version: string;
   mode: string;
-  coverage_scope: { plan_type: string; count: number; providers: string[] };
+  coverage_scope: {
+    plan_types: string[];
+    coding_subscription: { count: number; providers: string[] };
+    api_usage: { count: number; providers: string[] };
+  };
   coverage_gaps: { name: string; reason: string }[];
   errors: { provider_id: string; error: string }[];
   collections: Record<string, PlanCollection>;
@@ -189,10 +193,13 @@ describe("collect 契约冻结（v1）", () => {
     }
   });
 
-  it("coverage_scope 与 coverage_gaps 冻结：8 项 coding-subscription + 缺口如实声明", () => {
-    expect(collectAll.coverage_scope.plan_type).toBe("coding-subscription");
-    expect(collectAll.coverage_scope.count).toBe(8);
-    expect(collectAll.coverage_scope.providers).toHaveLength(8);
+  it("coverage_scope 与 coverage_gaps 冻结:8 项 coding-subscription + 1 项 api-usage + 缺口如实声明", () => {
+    const scope = collectAll.coverage_scope;
+    expect(scope.plan_types).toEqual(["coding-subscription", "api-usage"]);
+    expect(scope.coding_subscription.count).toBe(8);
+    expect(scope.coding_subscription.providers).toHaveLength(8);
+    expect(scope.api_usage.count).toBe(1);
+    expect(scope.api_usage.providers).toContain("deepseek-api");
     expect(collectAll.coverage_gaps.length).toBeGreaterThanOrEqual(1);
     for (const gap of collectAll.coverage_gaps) {
       expect(gap.name).toBeTruthy();

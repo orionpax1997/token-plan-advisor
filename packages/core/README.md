@@ -23,11 +23,15 @@ tpa collect zai --pretty                 # 缩进输出（默认单行紧凑 JSO
 tpa collect codebuddy-cn                 # 腾讯云 CodeBuddy 中国站（CNY、北京腾讯云主体）
 tpa collect codebuddy-intl               # 腾讯云 CodeBuddy 国际站（USD、新加坡主体）
 
-tpa collect-all                          # 一次性输出全部 8 个已接入候选 + 覆盖缺口声明
+tpa collect deepseek-api                 # DeepSeek API（CNY、杭州主体、首批 api-usage Plan Type）
+
+tpa collect-all                          # 一次性输出全部 9 个已接入候选 + 覆盖缺口声明
 tpa collect-all --pretty
 ```
 
-已接入 Provider（8 个 Regional Variant，覆盖 7 项 coding-subscription 候选）：`zai`、`codebuddy-cn`、`codebuddy-intl`、`cursor`、`cursor-start-in`、`trae-intl`、`trae-cn`、`gemini-codeassist`。
+已接入 Provider（9 个，覆盖 8 项 coding-subscription + 1 项 api-usage）：`zai`、`codebuddy-cn`、`codebuddy-intl`、`cursor`、`cursor-start-in`、`trae-intl`、`trae-cn`、`gemini-codeassist`、`deepseek-api`。
+
+`deepseek-api` 是本批首个 **api-usage** Plan Type（杭州主体，按 token 计费、峰谷双价、并发限速），与 coding-subscription 不放在同一排行榜直接比较（CONTEXT.md「Plan Type」）；`collect-all` 在 `coverage_scope.api_usage` 单独列出。
 
 ### Benchmark 采集（collect-benchmark）
 
