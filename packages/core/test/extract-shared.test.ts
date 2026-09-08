@@ -43,7 +43,7 @@ describe("normalizeEnglishDate（月份表归一化器，5 份家族副本收敛
   });
 
   it("个位日期补零", () => {
-    expect(normalizeEnglishDate("June 7, 2025")).toBe("2026-06-07".replace("2026", "2025"));
+    expect(normalizeEnglishDate("June 7, 2025")).toBe("2025-06-07");
   });
 
   it("非英文月名（大小写不合/未知词）返回 null", () => {

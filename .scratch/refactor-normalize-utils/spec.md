@@ -5,7 +5,7 @@
 ## 背景结论（评审 + 事实核查）
 
 - `normalizeFromSnapshots` 签名 8 家统一（已被 `providers/factory.ts` 的 `NormalizeFromSnapshots` 类型固化）。
-- 纯重复（删除后消失）：`verified` ×8 逐字相同；`unobtainable` 两个逐字组（A 族 zai+cursor×2 双参 / B 族 trae×2+codebuddy×2+gemini 单参）；`notApplicable` ×5 逐字相同；`chainSrc` ×7 仅常量名异；`bodyOf` ×8 逐字相同；`pickBodyByChain` ×5 逐字相同；`sortSourcesByRegistry` 骨架 ×7 仅常量名异；英文月名归一化器 ×5 份（每份 ~15 行，extract 侧最大纯重复）；三时间戳 `sources.map` 块 ×8 骨架同构（差异 = note 文案与分支数）。
+- 纯重复（删除后消失）：`verified` ×8 逐字相同；`unobtainable` 两个逐字组（A 族 zai+cursor×2 双参 / B 族 trae×2+codebuddy×2+gemini 单参）；`notApplicable` ×5 逐字相同；`chainSrc` ×7 仅常量名异；`bodyOf` ×8 逐字相同；`pickBodyByChain` ×5 逐字相同；`sortSourcesByRegistry` 骨架 ×7 仅常量名异；英文月名归一化器 ×5 份（每份 ~15 行，extract 侧最大纯重复；严格说 codebuddy/intl 副本正则更宽松、容多空白，但上游捕获正则只产单空格形状，可达输入下输出等价——收敛时统一取 trae/intl 形态）；三时间戳 `sources.map` 块 ×8 骨架同构（差异 = note 文案与分支数）。
 - 不可收敛（earning its keep）：`extractStatedDate` 的正则与归一化路径（页面语言/格式差异）、zai 的 labels 循环签名、codebuddy/intl 的 `(empty)` 特判、cursor 系的 `attribute()` 归因抽取（是 pickBodyByChain 的替代品而非缺失）。
 - **Unresolved Fact 判定为不可收敛**：60 处内联构造骨架仅为 `push({...})`，差异纯文案（文案即领域知识）；schema 形状仅 4 键（fact/reason/failure_code?/how_to_resolve?），无 source_ids/note。共享层最多提供已存在的类型。未来评审勿重提。
 - `notApplicable` 在 zai/codebuddy×2 缺席是语义选择（codebuddy 有意用 `unobtainable`+note 表达"体系无此概念"），不是代码缺失。

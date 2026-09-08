@@ -27,7 +27,6 @@ const CHAIN_BY_PURPOSE = {
 const PROMOTION_DOUBLE_CREDITS_NOTE =
   "加赠积分/月（限时）=基础积分/月；活动区间外的标准价为'基础积分/月'列";
 
-/** 已验证字段的工厂：value + raw + source_ids（从 normalize-shared 引入）。 */
 interface PlanSpec {
   plan_id: string;
   plan_name: string;

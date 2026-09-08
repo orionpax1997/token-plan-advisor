@@ -23,7 +23,10 @@ export function pickBodyByChain(
   return "";
 }
 
-/** "February 13, 2026" → "2026-02-13"；非英文月名或无日期形状返回 null。 */
+/** "February 13, 2026" → "2026-02-13"；非英文月名或无日期形状返回 null。
+ * 宽松度取 trae/intl 形态（单空格 + 任意大小写字母 + 月份表拒绝未知词）；
+ * 全部调用点的上游捕获正则只产单空格 "Month D, YYYY" 形状，
+ * 月份表大小写敏感使小写拓宽输出等价（原各家族副本的差异不可达）。 */
 export function normalizeEnglishDate(text: string): string | null {
   const m = text.match(/([A-Za-z]+) (\d{1,2}), (\d{4})/);
   if (!m) return null;
