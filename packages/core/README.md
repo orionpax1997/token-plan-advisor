@@ -22,12 +22,19 @@ tpa collect zai --pretty                 # 缩进输出（默认单行紧凑 JSO
 
 tpa collect codebuddy-cn                 # 腾讯云 CodeBuddy 中国站（CNY、北京腾讯云主体）
 tpa collect codebuddy-intl               # 腾讯云 CodeBuddy 国际站（USD、新加坡主体）
+
+tpa collect-all                          # 一次性输出全部 8 个已接入候选 + 覆盖缺口声明
+tpa collect-all --pretty
 ```
+
+已接入 Provider（8 个 Regional Variant，覆盖 7 项 coding-subscription 候选）：`zai`、`codebuddy-cn`、`codebuddy-intl`、`cursor`、`cursor-start-in`、`trae-intl`、`trae-cn`、`gemini-codeassist`。
 
 输出为**机读 JSON**（Plan Schema v1，`schema_version: "1"`），stdout 只承载该文档；错误与用法写 stderr。
 输出必须通过 Schema 校验闸才会发出，包含：字段级质量状态、Unresolved Facts、采集时间戳、所用来源与回退链尝试记录。
 
-> 注意：`collect` 输出契约的正式冻结在 [ticket 05](../../.scratch/core-coding-plan-collection/issues/05-acceptance-contract-freeze.md)；冻结前字段仍可能随后续 Provider（ticket 02–04）需要而增补，增补会升版说明。
+### 输出契约（v1，已冻结）
+
+`collect` / `collect-all` 的机读 JSON 契约自 v1 起冻结（ticket 05）：顶层键集、封闭枚举、门控与时间戳语义见 [docs/contracts/collect-output-v1.md](../../docs/contracts/collect-output-v1.md)。任何变更须显式升版并在该文档「变更记录」登记；`test/contract-freeze.test.ts` 钉住契约形状，静默改动会被测试拦截。
 
 程序化调用：
 
@@ -50,7 +57,8 @@ const result = validatePlanCollection(doc); // { ok: true, value } | { ok: false
 - **模型生命周期**：`model_code` + `release_date` / `deprecation_date` + 档位可用性（`supported / routed / unavailable`；路由目标可追溯）。
 - **五维 `regional_availability`**：注册 / 支付 / 网络访问 / 服务政策 / 功能限制逐维建模，禁止合并为单一"支持/不支持"。
 - **`data_policy`**：训练用途（按个人/团队区分）、处理地、保留期限、ZDR。
-- **三时间戳**：每个来源带 `url` + `fetched_at`（采集方抓取时间）+ `last_updated_at`（页面自述更新/发布时间，页面未显示时为 `null` 并注明以采集时间为准）。
+- **三时间戳与双向核对**：每个来源带 `url` + `fetched_at`（采集方抓取时间）+ `last_updated_at`（页面自述更新/发布时间）。页面未显示时间时为 `null` 并显式标注「以采集时间为准」；两类标注的双向一致性由 `test/acceptance.test.ts` 审计。
+- **`ranking_gate` 排名门控**：探索 01 [§7.1](../../.scratch/token-plan-advisor/issues/01-explore-coding-plan-official-sources.md) 八项核心字段（价格、Plan 标识与 Plan Type、计费周期、额度原始表达、模型清单、地区支持、隐私/数据、购买入口）缺失时输出 `eligible: false` + 逐项缺失清单与原因——不可进入后续强排名，而非产生错误排名信号。门控由 `attachRankingGate` 从文档内容确定性派生，校验闸强制标记与内容一致。
 - **`source_chains` 回退链**：每条链记录首选与备选入口的抓取结果与最终采纳；整链失败时 `chosen_source_id` 为 `null`。失败原因、实际使用的来源与回退路径可从本字段追溯（tpa CLI 输出契约）。
 - **字段级质量状态**：`verified / partial / stale / source_conflict / unobtainable / not_applicable`。Schema 强制：
   - 未知（`null` + `unobtainable`）、零值（`0` + `verified`）、不适用（`null` + `not_applicable`）三种状态结构上可区分；
@@ -59,11 +67,20 @@ const result = validatePlanCollection(doc); // { ok: true, value } | { ok: false
 ## 新增 Data Provider
 
 1. 在 `src/providers/<vendor>/` 建 `sources.ts`（来源注册表 + 回退链配置；来源种类遵循探索 01 [§7.3](../../.scratch/token-plan-advisor/issues/01-explore-coding-plan-official-sources.md) 的优先级：定价页 → 文档/帮助 → 公告 → 控制台 → 法律条款；同种类内可提供多条候选入口，按 `chains` 数组中声明的优先级顺序逐条尝试）。
-2. 实现 `extract.ts`（从官方正文确定性抽取，每个值保留命中原文）与 `normalize.ts`（组装 `PlanCollection`；抽取不到的降级为 Unresolved Fact，不得猜测；冲突价/限时条款/`LOGIN_REQUIRED` 等进入 `unresolved_facts` 并标记对应 `failure_code`）。
-3. 在 `normalize.ts` 调用 `deriveSourceChains(snapshots, chains)` 派生 `source_chains` 字段。
-4. 抓取官方快照存入 `fixtures/<vendor>/` 并写 `manifest.json`（`captured_at` + 来源清单）；fixture 与 live 共用同一条归一化路径。
-5. 在 `src/cli.ts` 的 `PROVIDER_FACTORIES` 注册，并经 CLI seam 补端到端测试。
+2. 实现 `extract.ts`（从官方正文确定性抽取，每个值保留命中原文）与 `normalize.ts`（组装 `PlanCollectionPayload`；抽取不到的降级为 Unresolved Fact，不得猜测；冲突价/限时条款/`LOGIN_REQUIRED` 等进入 `unresolved_facts` 并标记对应 `failure_code`）。
+3. 在 `normalize.ts` 调用 `deriveSourceChains(snapshots, chains)` 派生 `source_chains` 字段；provider 出口用 `attachRankingGate(...)` 包装 normalize 结果（门控标记从文档内容自动派生，无需手填）。
+4. 抓取官方快照存入 `fixtures/<vendor>/` 并写 `manifest.json`（`captured_at` + 来源清单，见下节）；fixture 与 live 共用同一条归一化路径。
+5. 在 `src/cli.ts` 的 `PROVIDER_FACTORIES` 注册，并经 CLI seam 补端到端测试；若新 Provider 触发门控结论变化，同步更新 `test/ranking-gate.test.ts` 的 CLI 断言。
 
-## fixture 快照约定
+## fixture 快照管理流程
 
-`fixtures/zai/` 内为直接抓取自官方 URL 的原始快照；`manifest.json` 的 `captured_at` 是 fixture 模式输出的 `fetched_at`（当前快照于 2026-09-07 UTC 抓取）。快照仅作离线回放与回归基线，不代表采集时刻的线上事实；需要当前事实请用 `--mode live`。快照刷新流程与验收门控在 [ticket 05](../../.scratch/core-coding-plan-collection/issues/05-acceptance-contract-freeze.md) 落地。
+快照仅作离线回放与回归基线，不代表采集时刻的线上事实；需要当前事实请用 `--mode live`。
+
+- **采集日期**：每次采集在 `fixtures/<provider>/manifest.json` 的 `captured_at`（ISO 8601，UTC）登记，`note` 记录抓取时间窗与特殊说明；fixture 模式输出的 `fetched_at` 即此值。
+- **存放约定**：`fixtures/<provider>/` 平铺存放官方页原始快照；manifest 的 `sources[]` 逐条登记 `source_id` ↔ `file` ↔ `url`，与 `sources.ts` 注册表一一对应，缺条目时装载报错。
+- **刷新步骤**：
+  1. 逐条抓取 manifest 登记的官方 URL，覆盖写入对应快照文件（新增/下线来源同步改 `sources.ts` 与 manifest）；
+  2. 更新 `captured_at` 与 `note`；
+  3. `pnpm --filter @token-plan-advisor/core test`——全部测试（含 `ranking-gate.test.ts` 的门控结论断言）必须通过，线上事实变化导致结论变化时同步更新断言；
+  4. 提交信息注明「fixture 刷新 + 采集日期」。
+- **实时冒烟**：设 `TPA_LIVE_SMOKE=1` 运行 `test/live-smoke.test.ts`，对 z.ai 与 Gemini Code Assist 两项发起真实网络采集，验证 live 路径端到端可用（日常测试套件默认跳过，不依赖网络）。

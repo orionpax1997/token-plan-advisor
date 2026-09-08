@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { attachRankingGate } from "../../../schema/gate.ts";
 import type { DataProvider } from "../../types.ts";
 import { loadSnapshots, resolvePackageRoot } from "../load.ts";
 import { normalizeFromSnapshots } from "./normalize.ts";
@@ -29,7 +30,7 @@ export function createCodeBuddyIntlProvider(): DataProvider {
     async collect(options) {
       const now = options.now ?? (() => new Date());
       const snapshots = await loadSnapshots(options, fixtureDir, CODEBUDDY_INTL_SOURCES);
-      return normalizeFromSnapshots(snapshots, options.mode, now().toISOString(), toolVersion);
+      return attachRankingGate(normalizeFromSnapshots(snapshots, options.mode, now().toISOString(), toolVersion));
     },
   };
 }

@@ -1,5 +1,6 @@
 import type {
   PlanCollection,
+  PlanCollectionPayload,
   PlanField,
   SourceRef,
   UnresolvedFact,
@@ -72,7 +73,7 @@ export function normalizeCollection(input: {
   mode: "fixture" | "live";
   collectedAt: string;
   toolVersion: string;
-}): PlanCollection {
+}): PlanCollectionPayload {
   const { snapshots, facts, mode, collectedAt, toolVersion } = input;
   const { chains: sourceChainsOut, resolution } = deriveSourceChains(snapshots, GEMINI_CHAINS);
 
@@ -469,7 +470,7 @@ export function normalizeFromSnapshots(
   mode: "fixture" | "live",
   collectedAt: string,
   toolVersion: string,
-): PlanCollection {
+): PlanCollectionPayload {
   return normalizeCollection({
     snapshots,
     facts: extractFacts(snapshots, CHAIN_BY_PURPOSE),

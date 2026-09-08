@@ -69,7 +69,9 @@ export function httpStatusToFailureCode(status: number): FailureCode | null {
 }
 
 const DEFAULT_FETCHER: Fetcher = async (url) => {
-  const response = await fetch(url, { redirect: "follow" });
+  // 单源超时 20s：线上服务器挂起时不至无限阻塞 live 采集；
+  // 超时走与网络层错误相同的降级路径（不猜测失败分类，记录 error_note）
+  const response = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(20_000) });
   const body = await response.text();
   return { status: response.status, body };
 };

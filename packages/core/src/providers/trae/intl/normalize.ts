@@ -1,5 +1,6 @@
 import type {
   PlanCollection,
+  PlanCollectionPayload,
   PlanField,
   SourceRef,
   UnresolvedFact,
@@ -69,7 +70,7 @@ export function normalizeCollection(input: {
   mode: "fixture" | "live";
   collectedAt: string;
   toolVersion: string;
-}): PlanCollection {
+}): PlanCollectionPayload {
   const { snapshots, facts, mode, collectedAt, toolVersion } = input;
   const { chains: sourceChainsOut, resolution } = deriveSourceChains(snapshots, TRAE_INTL_CHAINS);
 
@@ -262,7 +263,7 @@ export function normalizeCollection(input: {
       ...(stated
         ? { last_updated_note: "页面显示 Last updated" }
         : isPricingPage
-          ? { last_updated_note: "客户端渲染定价页（RENDER_DEPENDENT），仅保留页脚联系邮箱" }
+          ? { last_updated_note: "客户端渲染定价页（RENDER_DEPENDENT），仅保留页脚联系邮箱；无页面级更新时间，以采集时间为准" }
           : { last_updated_note: "页面未显示更新时间（docs.trae.ai 站点级 updated_at 2026-08-26），以采集时间为准" }),
       http_status: snapshot.http_status,
       ...(snapshot.failure_code !== undefined ? { failure_code: snapshot.failure_code } : {}),
@@ -588,7 +589,7 @@ export function normalizeFromSnapshots(
   mode: "fixture" | "live",
   collectedAt: string,
   toolVersion: string,
-): PlanCollection {
+): PlanCollectionPayload {
   return normalizeCollection({
     snapshots,
     facts: extractFacts(snapshots, CHAIN_BY_PURPOSE),

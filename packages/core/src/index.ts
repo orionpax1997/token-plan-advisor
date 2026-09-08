@@ -4,6 +4,7 @@
  * 以及全部已接入的 Data Provider：z.ai / CodeBuddy / Cursor / Trae / Gemini Code Assist。
  */
 export * from "./schema/plan.ts";
+export { attachRankingGate, deriveRankingGate } from "./schema/gate.ts";
 export type { CollectOptions, DataProvider, FetchResult, Fetcher } from "./providers/types.ts";
 export { createZaiProvider } from "./providers/zai/provider.ts";
 export { createCodeBuddyCnProvider } from "./providers/codebuddy/cn/provider.ts";

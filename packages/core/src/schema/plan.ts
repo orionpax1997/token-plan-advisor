@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { deriveRankingGate } from "./gate.ts";
 
 // ---------------------------------------------------------------------------
 // 受控词表（与探索 01 §7.4/§7.5 及 CONTEXT.md 领域词汇对齐）
@@ -141,7 +142,7 @@ function numberField() {
 // 价格
 // ---------------------------------------------------------------------------
 
-const BillingPeriods = ["monthly", "quarterly", "annual", "weekly", "daily", "one_time"] as const;
+export const BillingPeriods = ["monthly", "quarterly", "annual", "weekly", "daily", "one_time"] as const;
 export type BillingPeriod = (typeof BillingPeriods)[number];
 
 const PriceEntry = z
@@ -319,6 +320,58 @@ const DataPolicy = z.strictObject({
 export type DataPolicy = z.output<typeof DataPolicy>;
 
 // ---------------------------------------------------------------------------
+// 排名门控（探索 01 §7.1：核心字段缺失 → 不可进入后续强排名）
+// ---------------------------------------------------------------------------
+
+/** §7.1 八项核心字段的机读标识（顺序即探索给出的可比性优先序）。 */
+export const CoreFieldIds = [
+  "price",
+  "plan_identity",
+  "billing_period",
+  "quota_expression",
+  "model_catalog",
+  "regional_support",
+  "privacy_data",
+  "purchase_entry",
+] as const;
+export type CoreFieldId = (typeof CoreFieldIds)[number];
+
+const CoreFieldGap = z.strictObject({
+  field_id: z.enum(CoreFieldIds),
+  reason: z.string().min(1),
+});
+export type CoreFieldGap = z.output<typeof CoreFieldGap>;
+
+/**
+ * 排名门控标记：eligible=false 表示存在核心字段缺口，
+ * 只能作为参考候选，不可进入后续强排名（缺失清单见 missing_core_fields）。
+ * 标记不得脱离文档内容单独填报：validatePlanCollection 会重新派生并核对。
+ */
+const RankingGate = z
+  .strictObject({
+    eligible: z.boolean(),
+    missing_core_fields: z.array(CoreFieldGap),
+  })
+  .check((ctx) => {
+    const g = ctx.value as RankingGate;
+    if (g.eligible && g.missing_core_fields.length > 0) {
+      ctx.issues.push({
+        code: "custom",
+        message: "eligible=true 时 missing_core_fields 必须为空",
+        input: g,
+      });
+    }
+    if (!g.eligible && g.missing_core_fields.length === 0) {
+      ctx.issues.push({
+        code: "custom",
+        message: "eligible=false 时 missing_core_fields 必须非空（给出具体缺失清单）",
+        input: g,
+      });
+    }
+  });
+export type RankingGate = z.output<typeof RankingGate>;
+
+// ---------------------------------------------------------------------------
 // Plan 与采集文档
 // ---------------------------------------------------------------------------
 
@@ -462,8 +515,17 @@ export const PlanCollection = z.strictObject({
    */
   source_chains: z.array(SourceChainRef),
   unresolved_facts: z.array(UnresolvedFact),
+  /**
+   * §7.1 八项核心字段门控：缺失时输出“不可进入后续强排名”的标记与具体缺失清单，
+   * 而非错误排名信号。由 attachRankingGate 从文档内容派生，
+   * validatePlanCollection 强制标记与内容一致。
+   */
+  ranking_gate: RankingGate,
 });
 export type PlanCollection = z.output<typeof PlanCollection>;
+
+/** 归一化层产出：尚未附加门控标记的采集文档（由 attachRankingGate 装配成完整 PlanCollection）。 */
+export type PlanCollectionPayload = Omit<PlanCollection, "ranking_gate">;
 
 // ---------------------------------------------------------------------------
 // 校验入口
@@ -476,13 +538,33 @@ export type ValidationResult =
 /** 采集输出必须通过 Plan Schema v1 校验后才允许发出（CLI 的最后一道闸）。 */
 export function validatePlanCollection(input: unknown): ValidationResult {
   const result = PlanCollection.safeParse(input);
-  if (result.success) {
-    return { ok: true, value: result.data };
+  if (!result.success) {
+    return {
+      ok: false,
+      issues: result.error.issues.map(
+        (issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`,
+      ),
+    };
   }
-  return {
-    ok: false,
-    issues: result.error.issues.map(
-      (issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`,
-    ),
-  };
+  const value = result.data;
+  // 门控标记不可撒谎：重新从文档内容派生并与声明值核对。
+  const derived = deriveRankingGate(value);
+  const declared = value.ranking_gate;
+  const consistent =
+    derived.eligible === declared.eligible &&
+    derived.missing_core_fields.length === declared.missing_core_fields.length &&
+    derived.missing_core_fields.every(
+      (gap, i) =>
+        gap.field_id === declared.missing_core_fields[i]?.field_id &&
+        gap.reason === declared.missing_core_fields[i]?.reason,
+    );
+  if (!consistent) {
+    return {
+      ok: false,
+      issues: [
+        `ranking_gate: 标记与文档派生结果不一致（声明 ${JSON.stringify(declared)}，派生 ${JSON.stringify(derived)}）`,
+      ],
+    };
+  }
+  return { ok: true, value };
 }

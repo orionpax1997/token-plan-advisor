@@ -1,5 +1,6 @@
 import type {
   PlanCollection,
+  PlanCollectionPayload,
   PlanField,
   QualityStatus,
   QuotaWindow,
@@ -99,7 +100,7 @@ export function normalizeCollection(input: {
   mode: "fixture" | "live";
   collectedAt: string;
   toolVersion: string;
-}): PlanCollection {
+}): PlanCollectionPayload {
   const { snapshots, facts, mode, collectedAt, toolVersion } = input;
   const { chains: sourceChainsOut, resolution } = deriveSourceChains(snapshots, CURSOR_CHAINS);
 
@@ -690,7 +691,7 @@ export function normalizeFromSnapshots(
   mode: "fixture" | "live",
   collectedAt: string,
   toolVersion: string,
-): PlanCollection {
+): PlanCollectionPayload {
   return normalizeCollection({
     snapshots,
     facts: extractFacts(snapshots),

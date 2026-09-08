@@ -1,6 +1,7 @@
 import type {
   FailureCode,
   PlanCollection,
+  PlanCollectionPayload,
   PlanField,
   QualityStatus,
   QuotaModel,
@@ -72,7 +73,7 @@ export function normalizeCollection(input: {
   mode: "fixture" | "live";
   collectedAt: string;
   toolVersion: string;
-}): PlanCollection {
+}): PlanCollectionPayload {
   const { snapshots, facts, mode, collectedAt, toolVersion } = input;
   const overviewIds = OVERVIEW_IDS;
 
@@ -516,7 +517,7 @@ export function normalizeCollection(input: {
 }
 
 /** 供 normalize 使用的 facts 抽取入口（保持纯函数边界清晰）。 */
-export function normalizeFromSnapshots(snapshots: RawSnapshot[], mode: "fixture" | "live", collectedAt: string, toolVersion: string): PlanCollection {
+export function normalizeFromSnapshots(snapshots: RawSnapshot[], mode: "fixture" | "live", collectedAt: string, toolVersion: string): PlanCollectionPayload {
   return normalizeCollection({
     snapshots,
     facts: extractFacts(snapshots),
