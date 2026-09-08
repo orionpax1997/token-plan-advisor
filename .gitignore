@@ -33,3 +33,6 @@ Thumbs.db
 
 # pnpm
 node_modules/.pnpm-cache/
+
+# CodeGraph index (regenerated from source)
+.codegraph/
