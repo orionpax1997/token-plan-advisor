@@ -21,6 +21,7 @@ npm-debug.log*
 
 # Agent tooling (local)
 .pi/
+.pi-traces/
 
 # OS junk
 .DS_Store

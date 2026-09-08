@@ -1,0 +1,81 @@
+{
+  "captured_at": "2026-09-08T06:35:00.000Z",
+  "note": "Zapier AutomationBench 1.0.6（2026-09-08 06:32:56 UTC 抓取 zapier.com/benchmarks 页面，记录 published time 与 last-modified；同日核对官方 GitHub zapier/AutomationBench 仓库 README/LICENSE/CHANGELOG/sales+tasks.py 等）。私有 held-out leaderboard 来自官方榜单页面（10 条可见 + 6 个 domain 摘要），公开 600-task 仓库任务清单来自仓库 README（6 domain × 100 tasks）。两个数据集标识（zapier-automationbench-private-leaderboard vs zapier-automationbench-public-tasks）分开记录，不互相补齐分数。",
+  "sources": [
+    {
+      "source_id": "zapier-benchmarks-page",
+      "file": "leaderboard.html",
+      "url": "https://zapier.com/benchmarks"
+    },
+    {
+      "source_id": "zapier-benchmarks-page-meta",
+      "file": "page-meta.json",
+      "url": "https://zapier.com/benchmarks"
+    },
+    {
+      "source_id": "zapier-private-leaderboard",
+      "file": "private-leaderboard.json",
+      "url": "https://zapier.com/benchmarks"
+    },
+    {
+      "source_id": "zapier-private-leaderboard-domains",
+      "file": "private-leaderboard-domains.json",
+      "url": "https://zapier.com/benchmarks"
+    },
+    {
+      "source_id": "zapier-readme",
+      "file": "README.md",
+      "url": "https://raw.githubusercontent.com/zapier/AutomationBench/main/README.md"
+    },
+    {
+      "source_id": "zapier-license",
+      "file": "LICENSE",
+      "url": "https://raw.githubusercontent.com/zapier/AutomationBench/main/LICENSE"
+    },
+    {
+      "source_id": "zapier-changelog",
+      "file": "CHANGELOG.md",
+      "url": "https://raw.githubusercontent.com/zapier/AutomationBench/main/CHANGELOG.md"
+    },
+    {
+      "source_id": "zapier-public-tasks",
+      "file": "public-tasks.json",
+      "url": "https://raw.githubusercontent.com/zapier/AutomationBench/main/README.md"
+    },
+    {
+      "source_id": "zapier-public-baselines",
+      "file": "public-baselines.json",
+      "url": "https://raw.githubusercontent.com/zapier/AutomationBench/main/README.md"
+    },
+    {
+      "source_id": "zapier-pyproject",
+      "file": "pyproject.toml",
+      "url": "https://raw.githubusercontent.com/zapier/AutomationBench/main/pyproject.toml"
+    },
+    {
+      "source_id": "zapier-runner",
+      "file": "runner.py",
+      "url": "https://raw.githubusercontent.com/zapier/AutomationBench/main/automationbench/runner.py"
+    },
+    {
+      "source_id": "zapier-eval-script",
+      "file": "eval.py",
+      "url": "https://raw.githubusercontent.com/zapier/AutomationBench/main/automationbench/scripts/eval.py"
+    },
+    {
+      "source_id": "zapier-task-contract",
+      "file": "task_contract.py",
+      "url": "https://raw.githubusercontent.com/zapier/AutomationBench/main/automationbench/task_contract.py"
+    },
+    {
+      "source_id": "zapier-sales-tasks",
+      "file": "sales-tasks.py",
+      "url": "https://raw.githubusercontent.com/zapier/AutomationBench/main/automationbench/domains/sales/tasks.py"
+    },
+    {
+      "source_id": "zapier-pricing",
+      "file": "pricing.py",
+      "url": "https://raw.githubusercontent.com/zapier/AutomationBench/main/automationbench/pricing.py"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "benchmark_version": "1.0.6",
+  "captured_at": "2026-09-08T06:32:56Z",
+  "task_set_kind": "private_held_out",
+  "note": "domain 分数取 standalone model 在其 best effort level 的结果，并排除 fallback completion；overall leaderboard 第 5 名包含 Fable 5.1 + Opus 5 fallback，因此二者不能直接比较",
+  "domains": [
+    { "domain": "sales", "first_place": { "display_name": "GPT 6 Astra (Max)", "vendor": "OpenAI", "score": 0.402 }, "second_place": { "display_name": "Gemini 3.7 Flash (High)", "vendor": "Google", "score": 0.2821 } },
+    { "domain": "marketing", "first_place": { "display_name": "GPT 6 Astra (Max)", "vendor": "OpenAI", "score": 0.500 }, "second_place": { "display_name": "Gemini 3.8 Flash (High)", "vendor": "Google", "score": 0.430 } },
+    { "domain": "operations", "first_place": { "display_name": "GPT 6 Astra (Max)", "vendor": "OpenAI", "score": 0.620 }, "second_place": { "display_name": "GPT-5.6 Sol (High)", "vendor": "OpenAI", "score": 0.530 } },
+    { "domain": "support", "first_place": { "display_name": "GPT 6 Astra (XHigh)", "vendor": "OpenAI", "score": 0.390 }, "second_place": { "display_name": "Claude Fable 5.1 (Max)", "vendor": "Anthropic", "score": 0.290 } },
+    { "domain": "finance", "first_place": { "display_name": "GPT 6 Astra (High)", "vendor": "OpenAI", "score": 0.4333 }, "second_place": { "display_name": "Gemini 3.7 Flash (High)", "vendor": "Google", "score": 0.375 } },
+    { "domain": "hr", "first_place": { "display_name": "Gemini 3.8 Flash (Medium)", "vendor": "Google", "score": 0.2667 }, "second_place": { "display_name": "GPT 6 Astra (Max)", "vendor": "OpenAI", "score": 0.208 } }
+  ]
+}

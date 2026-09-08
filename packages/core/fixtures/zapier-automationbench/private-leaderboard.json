@@ -1,0 +1,23 @@
+{
+  "benchmark_version": "1.0.6",
+  "captured_at": "2026-09-08T06:32:56Z",
+  "headline_metric": "task_completed_correctly",
+  "diagnostic_metric": "partial_credit",
+  "task_set_kind": "private_held_out",
+  "task_set_description": "600+ held-out evaluation tasks（页面正文）；README 明确 leaderboard 使用每个 domain 独立的 held-out private task set，公开仓库提供的是 public task set",
+  "toolset": "api",
+  "max_steps": 50,
+  "rows": [
+    { "rank": 1, "display_name": "GPT 6 Astra (Max)", "vendor": "OpenAI", "model": "GPT-6 Astra", "effort": "max", "score": 0.414, "cost_per_task_usd": 1.77, "is_fallback_combo": false },
+    { "rank": 2, "display_name": "GPT 6 Astra (XHigh)", "vendor": "OpenAI", "model": "GPT-6 Astra", "effort": "xhigh", "score": 0.3896, "cost_per_task_usd": 1.53, "is_fallback_combo": false },
+    { "rank": 3, "display_name": "GPT 6 Astra (High)", "vendor": "OpenAI", "model": "GPT-6 Astra", "effort": "high", "score": 0.3714, "cost_per_task_usd": 1.45, "is_fallback_combo": false },
+    { "rank": 4, "display_name": "GPT 6 Astra (Medium)", "vendor": "OpenAI", "model": "GPT-6 Astra", "effort": "medium", "score": 0.3409, "cost_per_task_usd": 1.28, "is_fallback_combo": false },
+    { "rank": 5, "display_name": "Claude Fable 5.1 with Opus 5 Fallback (Max)", "vendor": "Anthropic", "model": "Claude Fable 5.1 + Opus 5 fallback", "effort": "max", "score": 0.314, "cost_per_task_usd": 2.45, "is_fallback_combo": true, "fallback_note": "Fable 5.1 遇 safety classifier 拒绝时由 Opus 5 完成该步；Opus 5 处理约 40% 任务（657 个中的 260 个）；cost 列仅 Fable 5.1 部分，不含 fallback tokens" },
+    { "rank": 6, "display_name": "Gemini 3.7 Flash (High)", "vendor": "Google", "model": "Gemini 3.7 Flash", "effort": "high", "score": 0.3044, "cost_per_task_usd": 0.61, "is_fallback_combo": false, "promotional_pricing_note": "2026-12-31 前促销价 $0.30/task" },
+    { "rank": 7, "display_name": "GPT 6 Astra (Low)", "vendor": "OpenAI", "model": "GPT-6 Astra", "effort": "low", "score": 0.3029, "cost_per_task_usd": 1.08, "is_fallback_combo": false },
+    { "rank": 8, "display_name": "Gemini 3.8 Flash (Medium)", "vendor": "Google", "model": "Gemini 3.8 Flash", "effort": "medium", "score": 0.2968, "cost_per_task_usd": 0.55, "is_fallback_combo": false, "promotional_pricing_note": "Medium $0.27/task（促销）" },
+    { "rank": 9, "display_name": "Gemini 3.8 Flash (High)", "vendor": "Google", "model": "Gemini 3.8 Flash", "effort": "high", "score": 0.2968, "cost_per_task_usd": 0.62, "is_fallback_combo": false, "promotional_pricing_note": "High $0.31/task（促销）" },
+    { "rank": 10, "display_name": "GPT-5.6 Sol (Max)", "vendor": "OpenAI", "model": "GPT-5.6 Sol", "effort": "max", "score": 0.2877, "cost_per_task_usd": 0.91, "is_fallback_combo": false }
+  ],
+  "additional_rows_note": "页面标注另有 85 条榜单记录，本次读取未在页面正文展开，不作为事实补齐"
+}

@@ -1,0 +1,44 @@
+{
+  "benchmark_version": "1.0.6",
+  "task_set_kind": "public",
+  "captured_at": "2026-09-08T06:32:56Z",
+  "total_tasks": 600,
+  "domain_count": 6,
+  "domains": [
+    {
+      "name": "sales",
+      "n_tasks": 100,
+      "topics": ["CRM", "lead management", "cross-app workflows"]
+    },
+    {
+      "name": "marketing",
+      "n_tasks": 100,
+      "topics": ["campaigns", "content", "channels"]
+    },
+    {
+      "name": "operations",
+      "n_tasks": 100,
+      "topics": ["inventory", "orders", "operations data"]
+    },
+    {
+      "name": "support",
+      "n_tasks": 100,
+      "topics": ["tickets", "customer support", "case routing"]
+    },
+    {
+      "name": "finance",
+      "n_tasks": 100,
+      "topics": ["AP", "AR", "expenses", "reporting", "bookkeeping"]
+    },
+    {
+      "name": "hr",
+      "n_tasks": 100,
+      "topics": ["recruitment", "onboarding", "time off", "payroll"]
+    }
+  ],
+  "simulated_apps": 47,
+  "api_endpoints": 500,
+  "toolset_modes": ["api", "zapier", "limited_zapier"],
+  "default_max_steps": 50,
+  "simple_domain_note": "公开仓库另有 simple domain 200 任务（CRM/email/Slack/calendar/project management），不纳入 benchmark score，仅用于基础工具使用验证"
+}

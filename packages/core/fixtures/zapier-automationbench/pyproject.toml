@@ -1,0 +1,8 @@
+# Stub pyproject.toml used for fixture identification.
+# Real values: https://raw.githubusercontent.com/zapier/AutomationBench/main/pyproject.toml
+[project]
+name = "automationbench"
+version = "1.0.6"
+
+[project.optional-dependencies]
+dev = []

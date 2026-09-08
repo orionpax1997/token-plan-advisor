@@ -42,10 +42,46 @@ describe.skipIf(!hasBuild)("tpa CLI 端到端（collect-benchmark，spawn dist/t
     }
   });
 
+  it("collect-benchmark terminal-bench 输出通过 Benchmark Schema 校验的机读 JSON", async () => {
+    const result = await run(["collect-benchmark", "terminal-bench"]);
+    if (result.code !== 0) {
+      throw new Error(`CLI exited ${result.code}: ${result.stderr}`);
+    }
+    const parsed = JSON.parse(result.stdout);
+    const validation = validateBenchmarkCollection(parsed);
+    expect(validation.ok).toBe(true);
+    if (validation.ok) {
+      expect(validation.value.collection.adapter_id).toBe("terminal-bench");
+      expect(validation.value.benchmark.benchmark_version).toBe("v4.0");
+      expect(validation.value.benchmark.leaderboard_or_dataset_revision).toContain("leaderboard=4-0-0");
+      expect(validation.value.records.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("collect-benchmark zapier-automationbench 输出通过 Benchmark Schema 校验的机读 JSON", async () => {
+    const result = await run(["collect-benchmark", "zapier-automationbench"]);
+    if (result.code !== 0) {
+      throw new Error(`CLI exited ${result.code}: ${result.stderr}`);
+    }
+    const parsed = JSON.parse(result.stdout);
+    const validation = validateBenchmarkCollection(parsed);
+    expect(validation.ok).toBe(true);
+    if (validation.ok) {
+      expect(validation.value.collection.adapter_id).toBe("zapier-automationbench");
+      expect(validation.value.benchmark.benchmark_version).toBe("1.0.6");
+      // 私有 held-out 与公开 600-task 仓库作为不同数据集标识同时出现
+      expect(validation.value.benchmark.leaderboard_or_dataset_revision).toContain("private_held_out");
+      expect(validation.value.benchmark.leaderboard_or_dataset_revision).toContain("public_600_task_repo");
+      expect(validation.value.records.length).toBeGreaterThan(0);
+    }
+  });
+
   it("未知 benchmark 来源 → 退出码 2，stderr 说明可用来源", async () => {
     const result = await run(["collect-benchmark", "nope"]);
     expect(result.code).toBe(2);
     expect(result.stderr).toContain("nope");
+    expect(result.stderr).toContain("terminal-bench");
+    expect(result.stderr).toContain("zapier-automationbench");
     expect(result.stdout).toBe("");
   });
 

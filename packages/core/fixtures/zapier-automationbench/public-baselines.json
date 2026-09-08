@@ -1,0 +1,19 @@
+{
+  "benchmark_version": "1.0.6",
+  "task_set_kind": "public",
+  "captured_at": "2026-09-08T06:32:56Z",
+  "note": "公开仓库 README 给出的公开集基线（baseline）分数，与官方 leaderboard 不是同一数据集；按 README 公开集本地结果不与官方榜单 1:1 等价，只应期待方向性一致",
+  "rows": [
+    { "display_name": "Claude Opus 5", "vendor": "Anthropic", "model": "Claude Opus 5" },
+    { "display_name": "Kimi K3", "vendor": "Moonshot", "model": "Kimi K3" },
+    { "display_name": "Claude Fable 5", "vendor": "Anthropic", "model": "Claude Fable 5" },
+    { "display_name": "GPT-5.6 Sol", "vendor": "OpenAI", "model": "GPT-5.6 Sol" },
+    { "display_name": "Gemini 3.6 Flash", "vendor": "Google", "model": "Gemini 3.6 Flash" },
+    { "display_name": "Claude Opus 4.8", "vendor": "Anthropic", "model": "Claude Opus 4.8" },
+    { "display_name": "Gemini 3.5 Flash", "vendor": "Google", "model": "Gemini 3.5 Flash" },
+    { "display_name": "GPT-5.6 Terra", "vendor": "OpenAI", "model": "GPT-5.6 Terra" },
+    { "display_name": "Claude Sonnet 5", "vendor": "Anthropic", "model": "Claude Sonnet 5" },
+    { "display_name": "GLM 5.2", "vendor": "Z.ai", "model": "GLM 5.2" }
+  ],
+  "baseline_scores_note": "公开集基线分数由维护方在 README 中提供；本 fixture 仅登记模型展示名与 vendor（页面榜单唯一可比字段），不引用第三方未公开页面数字。"
+}

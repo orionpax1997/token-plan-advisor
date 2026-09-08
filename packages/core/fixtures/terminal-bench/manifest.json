@@ -1,0 +1,46 @@
+{
+  "captured_at": "2026-09-08T06:45:30.000Z",
+  "note": "Terminal-Bench 4.0（terminal-bench/terminal-bench@4，leaderboard 4-0-0）官方公开页面快照（2026-09-08 06:40:15 UTC 抓取 Harbor Hub 页面，等待客户端渲染排行榜，记录 66 任务清单与 18 条可见提交记录）。页面是 Harbor Hub 公开动态榜单，不提供逐行机器可读 leaderboard JSON；本 fixture 把页面直接显示的字段以 JSON 形式落盘（rank、agent、model、effort、accuracy、accuracy_ci95_half_width、display_accuracy、release_date、agent_org、model_org、tokens、cost），保留官方列与字段命名。",
+  "sources": [
+    {
+      "source_id": "terminal-bench-readme",
+      "file": "README.md",
+      "url": "https://github.com/harbor-framework/terminal-bench/blob/main/README.md"
+    },
+    {
+      "source_id": "terminal-bench-license",
+      "file": "LICENSE",
+      "url": "https://github.com/harbor-framework/terminal-bench/blob/main/LICENSE"
+    },
+    {
+      "source_id": "terminal-bench-hub",
+      "file": "leaderboard.json",
+      "url": "https://hub.harborframework.com/datasets/terminal-bench/terminal-bench/4?tab=leaderboard&leaderboard=4-0-0"
+    },
+    {
+      "source_id": "terminal-bench-hub-html",
+      "file": "leaderboard-page.html",
+      "url": "https://hub.harborframework.com/datasets/terminal-bench/terminal-bench/4?tab=leaderboard&leaderboard=4-0-0"
+    },
+    {
+      "source_id": "terminal-bench-tasks",
+      "file": "tasks.txt",
+      "url": "https://hub.harborframework.com/datasets/terminal-bench/terminal-bench/4?tab=leaderboard&leaderboard=4-0-0"
+    },
+    {
+      "source_id": "harbor-tasks-docs",
+      "file": "harbor-tasks-docs.html",
+      "url": "https://www.harborframework.com/docs/tasks"
+    },
+    {
+      "source_id": "harbor-metrics-docs",
+      "file": "harbor-metrics-docs.html",
+      "url": "https://www.harborframework.com/docs/datasets/metrics"
+    },
+    {
+      "source_id": "harbor-tb-tutorial",
+      "file": "harbor-tb-tutorial.html",
+      "url": "https://www.harborframework.com/docs/tutorials/running-terminal-bench"
+    }
+  ]
+}
