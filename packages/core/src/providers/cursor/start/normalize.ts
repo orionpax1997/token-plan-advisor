@@ -7,8 +7,8 @@ import type {
   UnresolvedFact,
 } from "../../../schema/plan.ts";
 import type { FailureCode } from "../../../schema/plan.ts";
-import type { RawSnapshot } from "../load.ts";
-import { deriveSourceChains } from "../shared.ts";
+import type { RawSnapshot } from "../../_shared.ts";
+import { deriveSourceChains } from "../../_shared.ts";
 import { extractFacts, extractStatedDate, type Attributed, type ExtractedFacts } from "./extract.ts";
 import { CURSOR_START_CHAINS, CURSOR_START_SOURCES } from "./sources.ts";
 

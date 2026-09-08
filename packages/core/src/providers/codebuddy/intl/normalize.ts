@@ -5,8 +5,8 @@ import type {
   SourceRef,
   UnresolvedFact,
 } from "../../../schema/plan.ts";
-import type { RawSnapshot } from "../load.ts";
-import { deriveSourceChains } from "../shared.ts";
+import type { RawSnapshot } from "../../_shared.ts";
+import { deriveSourceChains } from "../../_shared.ts";
 import { extractFacts, extractStatedDate, type ExtractedFacts } from "./extract.ts";
 import { CODEBUDDY_INTL_CHAINS, CODEBUDDY_INTL_SOURCES, SRC } from "./sources.ts";
 

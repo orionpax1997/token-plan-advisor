@@ -1,29 +1,15 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { createCodeBuddyCnProvider } from "../src/providers/codebuddy/cn/provider.ts";
 import { createCodeBuddyIntlProvider } from "../src/providers/codebuddy/intl/provider.ts";
 import { CODEBUDDY_CN_SOURCES } from "../src/providers/codebuddy/cn/sources.ts";
 import { CODEBUDDY_INTL_SOURCES } from "../src/providers/codebuddy/intl/sources.ts";
 import { validatePlanCollection, type PlanCollection } from "../src/schema/plan.ts";
 import type { Fetcher } from "../src/providers/types.ts";
+import { fakeLiveFetcher } from "./helpers/fake-live-fetcher.ts";
 
 const CN_FIXTURE_DIR = new URL("../fixtures/codebuddy-cn/", import.meta.url).pathname;
 const INTL_FIXTURE_DIR = new URL("../fixtures/codebuddy-intl/", import.meta.url).pathname;
 const COLLECTED_AT = "2026-09-07T11:00:00.000Z";
-
-/** 把 fixture 快照伪装成 HTTP 响应，验证 live 路径的解析逻辑（不发起真实网络请求）。 */
-function fakeLiveFetcher(
-  fixtureDir: string,
-  sources: { source_id: string; file: string; url: string }[],
-): Fetcher {
-  return async (url) => {
-    const source = sources.find((s) => s.url === url);
-    if (!source) return { status: 404, body: "" };
-    const body = await readFile(join(fixtureDir, source.file), "utf8");
-    return { status: 200, body };
-  };
-}
 
 describe("CodeBuddy CN Data Provider（live 模式，注入抓取函数）", () => {
   let live: PlanCollection;

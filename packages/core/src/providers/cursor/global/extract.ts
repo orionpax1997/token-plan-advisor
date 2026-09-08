@@ -1,4 +1,4 @@
-import type { RawSnapshot } from "../load.ts";
+import type { RawSnapshot } from "../../_shared.ts";
 import { SRC } from "./sources.ts";
 
 /** 从快照集合中取单个来源正文（失败或缺失时为空串）。 */

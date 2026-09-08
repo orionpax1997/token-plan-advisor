@@ -1,16 +1,7 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { attachRankingGate } from "../../schema/gate.ts";
+import { createSnapshotProvider } from "../factory.ts";
 import type { DataProvider } from "../types.ts";
-import { loadSnapshots, resolvePackageRoot } from "./load.ts";
 import { normalizeFromSnapshots } from "./normalize.ts";
-import { GEMINI_SOURCES } from "./sources.ts";
-
-function readToolVersion(): string {
-  const root = resolvePackageRoot(import.meta.url);
-  const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { version?: string };
-  return pkg.version ?? "0.0.0";
-}
+import { GEMINI_CHAINS, GEMINI_SOURCES } from "./sources.ts";
 
 /**
  * Google Gemini Code Assist Data Provider（research/01）。
@@ -21,17 +12,11 @@ function readToolVersion(): string {
  * 来源间的回退链在 sources.ts 的 GEMINI_CHAINS 中声明，
  * 由 normalize.ts 派生到 PlanCollection.source_chains。
  */
-export function createGeminiCodeAssistProvider(): DataProvider {
-  const packageRoot = resolvePackageRoot(import.meta.url);
-  const fixtureDir = join(packageRoot, "fixtures", "gemini-codeassist");
-  const toolVersion = readToolVersion();
-
-  return {
+export const createGeminiCodeAssistProvider = (): DataProvider =>
+  createSnapshotProvider({
     providerId: "google-gemini-codeassist",
-    async collect(options) {
-      const now = options.now ?? (() => new Date());
-      const snapshots = await loadSnapshots(options, fixtureDir, GEMINI_SOURCES);
-      return attachRankingGate(normalizeFromSnapshots(snapshots, options.mode, now().toISOString(), toolVersion));
-    },
-  };
-}
+    fixtureDir: "gemini-codeassist",
+    sources: GEMINI_SOURCES,
+    chains: GEMINI_CHAINS,
+    normalizeFromSnapshots,
+  });

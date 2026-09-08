@@ -8,7 +8,7 @@ import type {
   SourceRef,
   UnresolvedFact,
 } from "../../schema/plan.ts";
-import type { RawSnapshot } from "./load.ts";
+import type { RawSnapshot } from "../_shared.ts";
 import { SRC } from "./sources.ts";
 import { extractFacts, extractStatedDate, type ExtractedFacts } from "./extract.ts";
 

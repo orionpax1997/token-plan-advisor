@@ -1,4 +1,4 @@
-import type { RawSnapshot } from "./load.ts";
+import type { RawSnapshot } from "../_shared.ts";
 
 /**
  * Gemini Code Assist 确定性抽取：从 Google Cloud / codeassist.google / docs 站抽取

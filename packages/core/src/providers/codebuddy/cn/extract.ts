@@ -1,4 +1,4 @@
-import type { RawSnapshot } from "../load.ts";
+import type { RawSnapshot } from "../../_shared.ts";
 
 /**
  * CodeBuddy 中国站确定性抽取：从 .md 原文抽取价格、积分、模型、地区等事实。

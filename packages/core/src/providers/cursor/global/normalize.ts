@@ -8,8 +8,8 @@ import type {
   UnresolvedFact,
 } from "../../../schema/plan.ts";
 import type { FailureCode } from "../../../schema/plan.ts";
-import type { RawSnapshot } from "../load.ts";
-import { deriveSourceChains, type ChainResolution } from "../shared.ts";
+import type { RawSnapshot } from "../../_shared.ts";
+import { deriveSourceChains, type ChainResolution } from "../../_shared.ts";
 import {
   extractFacts,
   extractStatedDate,

@@ -1,5 +1,4 @@
-import type { CodeBuddySourceSpec } from "../load.ts";
-import type { SourceChainSpec } from "../shared.ts";
+import type { SourceSpec as CodeBuddySourceSpec, SourceChainSpec } from "../../_shared.ts";
 
 /** 来源 id 常量。 */
 export const SRC = {

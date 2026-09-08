@@ -1,23 +1,13 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { createZaiProvider } from "../src/providers/zai/provider.ts";
 import { ZAI_SOURCES } from "../src/providers/zai/sources.ts";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { validatePlanCollection, type PlanCollection } from "../src/schema/plan.ts";
 import type { Fetcher } from "../src/providers/types.ts";
+import { fakeLiveFetcher } from "./helpers/fake-live-fetcher.ts";
 
 const FIXTURE_DIR = new URL("../fixtures/zai/", import.meta.url).pathname;
 const COLLECTED_AT = "2026-09-07T11:00:00.000Z";
-
-/** 把 fixture 快照伪装成 HTTP 响应，验证 live 路径的解析逻辑（不发起真实网络请求）。 */
-function fakeLiveFetcher(): Fetcher {
-  return async (url) => {
-    const source = ZAI_SOURCES.find((s) => s.url === url);
-    if (!source) return { status: 404, body: "" };
-    const body = await readFile(join(FIXTURE_DIR, source.file), "utf8");
-    return { status: 200, body };
-  };
-}
+const fetchLiveFixtures = () => fakeLiveFetcher(FIXTURE_DIR, ZAI_SOURCES);
 
 let live: PlanCollection;
 let fixture: PlanCollection;
@@ -26,7 +16,7 @@ beforeAll(async () => {
   const provider = createZaiProvider();
   live = await provider.collect({
     mode: "live",
-    fetcher: fakeLiveFetcher(),
+    fetcher: fetchLiveFixtures(),
     now: () => new Date(COLLECTED_AT),
   });
   fixture = await provider.collect({
@@ -59,7 +49,7 @@ describe("z.ai Data Provider（live 模式，注入抓取函数）", () => {
     const provider = createZaiProvider();
     const failingFetcher: Fetcher = async (url) => {
       if (url.includes("legal-agreement/terms-of-use")) return { status: 404, body: "" };
-      return fakeLiveFetcher()(url);
+      return fetchLiveFixtures()(url);
     };
     const degraded = await provider.collect({
       mode: "live",
@@ -79,7 +69,7 @@ describe("z.ai Data Provider（live 模式，注入抓取函数）", () => {
     const provider = createZaiProvider();
     const throwingFetcher: Fetcher = async (url) => {
       if (url.includes("devpack/teamplan")) throw new Error("ECONNRESET");
-      return fakeLiveFetcher()(url);
+      return fetchLiveFixtures()(url);
     };
     const degraded = await provider.collect({
       mode: "live",

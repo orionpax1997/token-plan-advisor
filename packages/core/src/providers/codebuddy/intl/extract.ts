@@ -1,4 +1,4 @@
-import type { RawSnapshot } from "../load.ts";
+import type { RawSnapshot } from "../../_shared.ts";
 
 /**
  * CodeBuddy 国际站确定性抽取。

@@ -5,8 +5,8 @@ import type {
   SourceRef,
   UnresolvedFact,
 } from "../../../schema/plan.ts";
-import type { RawSnapshot } from "../load.ts";
-import { deriveSourceChains, type ChainResolution } from "../shared.ts";
+import type { RawSnapshot } from "../../_shared.ts";
+import { deriveSourceChains, type ChainResolution } from "../../_shared.ts";
 import { extractFacts, extractStatedDate, type ExtractedFacts } from "./extract.ts";
 import { TRAE_INTL_CHAINS, TRAE_INTL_SOURCES } from "./sources.ts";
 

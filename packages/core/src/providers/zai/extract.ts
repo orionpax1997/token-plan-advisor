@@ -1,4 +1,4 @@
-import type { RawSnapshot } from "./load.ts";
+import type { RawSnapshot } from "../_shared.ts";
 
 /**
  * 确定性抽取层：从 docs.z.ai 的 .md 原文与订阅页 meta 中提取原始事实。

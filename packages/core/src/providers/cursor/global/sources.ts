@@ -1,5 +1,4 @@
-import type { CursorSourceSpec } from "../load.ts";
-import type { SourceChainSpec } from "../shared.ts";
+import type { SourceSpec as CursorSourceSpec, SourceChainSpec } from "../../_shared.ts";
 
 /** 来源 id 常量：normalize 层引用，避免字面量散落。 */
 export const SRC = {

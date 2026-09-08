@@ -1,16 +1,7 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { attachRankingGate } from "../../../schema/gate.ts";
+import { createSnapshotProvider } from "../../factory.ts";
 import type { DataProvider } from "../../types.ts";
-import { loadSnapshots, resolvePackageRoot } from "../load.ts";
 import { normalizeFromSnapshots } from "./normalize.ts";
-import { TRAE_INTL_SOURCES } from "./sources.ts";
-
-function readToolVersion(): string {
-  const root = resolvePackageRoot(import.meta.url);
-  const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { version?: string };
-  return pkg.version ?? "0.0.0";
-}
+import { TRAE_INTL_CHAINS, TRAE_INTL_SOURCES } from "./sources.ts";
 
 /**
  * TRAE 国际站（trae.ai，USD，Dollar Usage 计费）Data Provider。
@@ -21,17 +12,11 @@ function readToolVersion(): string {
  * 来源间的回退链在 sources.ts 的 TRAE_INTL_CHAINS 中声明，
  * 由 normalize.ts 派生到 PlanCollection.source_chains。
  */
-export function createTraeIntlProvider(): DataProvider {
-  const packageRoot = resolvePackageRoot(import.meta.url);
-  const fixtureDir = join(packageRoot, "fixtures", "trae-intl");
-  const toolVersion = readToolVersion();
-
-  return {
+export const createTraeIntlProvider = (): DataProvider =>
+  createSnapshotProvider({
     providerId: "bytedance-trae-intl",
-    async collect(options) {
-      const now = options.now ?? (() => new Date());
-      const snapshots = await loadSnapshots(options, fixtureDir, TRAE_INTL_SOURCES);
-      return attachRankingGate(normalizeFromSnapshots(snapshots, options.mode, now().toISOString(), toolVersion));
-    },
-  };
-}
+    fixtureDir: "trae-intl",
+    sources: TRAE_INTL_SOURCES,
+    chains: TRAE_INTL_CHAINS,
+    normalizeFromSnapshots,
+  });

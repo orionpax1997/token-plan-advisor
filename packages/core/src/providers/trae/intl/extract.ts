@@ -1,4 +1,4 @@
-import type { RawSnapshot } from "../load.ts";
+import type { RawSnapshot } from "../../_shared.ts";
 
 /**
  * Trae 国际站确定性抽取：从 docs.trae.ai 帮助文档、博客与隐私政策抽取
